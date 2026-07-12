@@ -366,18 +366,18 @@ export default function App() {
               <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-tr from-emerald-600 to-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10 shrink-0">
                 <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
-                  <h1 className="font-display font-extrabold text-slate-950 text-sm sm:text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent truncate">
-                    Aprova Professor
-                  </h1>
+              <div className="min-w-0 flex flex-col justify-center">
+                <h1 className="font-display font-extrabold text-slate-950 text-sm sm:text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent truncate">
+                  Aprova Professor
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
                   <span className="bg-emerald-50 text-emerald-700 text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-100 uppercase tracking-wider shrink-0">
-                    Seduc-CE
+                    SEDUC-CE 2026
                   </span>
+                  <p className="text-slate-400 text-[9px] sm:text-[10px] font-medium tracking-wide hidden sm:block">
+                    • Seu mentor pedagógico de alto desempenho
+                  </p>
                 </div>
-                <p className="text-slate-400 text-[9px] sm:text-[10px] font-medium tracking-wide mt-1 hidden md:block">
-                  Seu mentor pedagógico de alto desempenho
-                </p>
               </div>
             </div>
 
