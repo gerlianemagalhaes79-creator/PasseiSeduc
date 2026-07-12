@@ -8,6 +8,7 @@ import MentorChatModule from "./components/MentorChatModule";
 import OnboardingModule from "./components/OnboardingModule";
 import DnaModule from "./components/DnaModule";
 import FlashcardsModal from "./components/FlashcardsModal";
+import FlashcardsModule from "./components/FlashcardsModule";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -25,7 +26,8 @@ import {
   Fingerprint,
   CheckSquare,
   ChevronDown,
-  Calendar
+  Calendar,
+  Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -368,6 +370,7 @@ export default function App() {
                   <option value="schedule" className="text-slate-800 bg-white font-semibold">📅 Cronograma de Estudos</option>
                   <option value="syllabus" className="text-slate-800 bg-white font-semibold">📖 Guia do Edital</option>
                   <option value="simulator" className="text-slate-800 bg-white font-semibold">📝 Simulador de Provas</option>
+                  <option value="flashcards" className="text-slate-800 bg-white font-semibold">⚡ Estudar Flashcards</option>
                   <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Professor Mentor</option>
                   <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA da Banca</option>
                   <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustar Edital</option>
@@ -441,6 +444,18 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setActiveModule("flashcards")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "flashcards"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <Layers className="w-4.5 h-4.5 text-emerald-600" />
+              Estudar Flashcards
+            </button>
+
+            <button
               onClick={() => setActiveModule("chat")}
               className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeModule === "chat"
@@ -503,7 +518,26 @@ export default function App() {
                         }
                       }}
                       flashcards={flashcards}
-                      onOpenFlashcards={() => setIsFlashcardModalOpen(true)}
+                      onOpenFlashcards={() => setActiveModule("flashcards")}
+                    />
+                  </motion.div>
+                )}
+
+                {activeModule === "flashcards" && (
+                  <motion.div
+                    key="flashcards"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <FlashcardsModule
+                      flashcards={flashcards}
+                      onDeleteFlashcard={handleDeleteFlashcard}
+                      topics={topics}
+                      onPracticeTopic={(topicName) => {
+                        setCurrentTopic(topicName);
+                        setActiveModule("simulator");
+                      }}
                     />
                   </motion.div>
                 )}
@@ -538,7 +572,7 @@ export default function App() {
                       setCurrentTopic={setCurrentTopic}
                       flashcards={flashcards}
                       onSaveFlashcard={handleSaveFlashcard}
-                      onOpenFlashcards={() => setIsFlashcardModalOpen(true)}
+                      onOpenFlashcards={() => setActiveModule("flashcards")}
                     />
                   </motion.div>
                 )}

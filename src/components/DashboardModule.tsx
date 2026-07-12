@@ -838,37 +838,6 @@ export default function DashboardModule({
           <>
             {/* Main section: Study Progress & Content Map */}
             <div className="lg:col-span-3 space-y-6">
-              {/* FLASHCARDS DE DIFICULDADE DECK BENTO CARD */}
-              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full filter blur-2xl pointer-events-none"></div>
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-white/20 text-white rounded-2xl border border-white/20 shrink-0 mt-1">
-                    <Brain className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-white/10">
-                      Fixação de Dificuldades • Flashcards Ativos
-                    </span>
-                    <h3 className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-white">
-                      Estudar Flashcards de Memorização Ativa ({flashcards.length})
-                    </h3>
-                    <p className="text-amber-100 text-xxs sm:text-xs max-w-xl leading-relaxed">
-                      Você tem <strong className="font-black text-white">{flashcards.length} flashcard{flashcards.length !== 1 ? 's' : ''}</strong> salvo{flashcards.length !== 1 ? 's' : ''} para fixação de conceitos e distratores recorrentes. Nosso algoritmo neurocognitivo sugere revisá-los periodicamente para garantir que o conhecimento saia da memória de curto prazo direto para a de longo prazo.
-                    </p>
-                  </div>
-                </div>
-
-                {onOpenFlashcards && (
-                  <button
-                    onClick={onOpenFlashcards}
-                    className="w-full md:w-auto bg-white hover:bg-slate-50 text-amber-700 font-extrabold text-xs px-6 py-3.5 rounded-xl transition-all cursor-pointer shadow-sm shrink-0 uppercase tracking-wider flex items-center justify-center gap-2 border-none"
-                  >
-                    <Layers className="w-4 h-4" />
-                    <span>Praticar Flashcards ⚡</span>
-                  </button>
-                )}
-              </div>
-
               {/* Chart Card */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-xs space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
