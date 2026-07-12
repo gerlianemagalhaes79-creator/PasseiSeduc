@@ -1,0 +1,697 @@
+import React, { useState, useEffect } from "react";
+import { UserProfile, StudyTopic, Flashcard } from "./types";
+import { INITIAL_TOPICS, DISCIPLINE_TOPICS } from "./data/initialTopics";
+import DashboardModule from "./components/DashboardModule";
+import SyllabusModule from "./components/SyllabusModule";
+import SimulatorModule from "./components/SimulatorModule";
+import MentorChatModule from "./components/MentorChatModule";
+import OnboardingModule from "./components/OnboardingModule";
+import DnaModule from "./components/DnaModule";
+import FlashcardsModal from "./components/FlashcardsModal";
+import { 
+  GraduationCap, 
+  LayoutDashboard, 
+  HelpCircle, 
+  MessageSquare, 
+  Settings, 
+  Sparkles, 
+  Flame, 
+  ChevronRight,
+  BookOpen,
+  Info,
+  Sliders,
+  CheckCircle,
+  Clock,
+  Fingerprint,
+  CheckSquare,
+  ChevronDown,
+  Calendar
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+
+export default function App() {
+  // Application Onboarding State
+  const [onboarded, setOnboarded] = useState<boolean>(() => {
+    return localStorage.getItem("ia_aprova_onboarded") === "true";
+  });
+
+  // Flashcards state and handlers
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(() => {
+    const saved = localStorage.getItem("ia_aprova_flashcards_v1");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const [isFlashcardModalOpen, setIsFlashcardModalOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_flashcards_v1", JSON.stringify(flashcards));
+  }, [flashcards]);
+
+  const handleSaveFlashcard = (flashcardData: Omit<Flashcard, "id" | "createdAt">) => {
+    const newFlashcard: Flashcard = {
+      ...flashcardData,
+      id: `fc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString()
+    };
+    setFlashcards(prev => {
+      if (prev.some(f => f.topic === flashcardData.topic && f.front === flashcardData.front)) {
+        return prev;
+      }
+      return [newFlashcard, ...prev];
+    });
+  };
+
+  const handleDeleteFlashcard = (id: string) => {
+    setFlashcards(prev => prev.filter(f => f.id !== id));
+  };
+
+  // Application State
+  const [activeModule, setActiveModule] = useState<string>("dashboard");
+  const [topics, setTopics] = useState<StudyTopic[]>(() => {
+    const saved = localStorage.getItem("ia_aprova_topics_v4");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return INITIAL_TOPICS;
+  });
+  const [currentTopic, setCurrentTopic] = useState<string>("Legislação Educacional Geral e Didática");
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_topics_v4", JSON.stringify(topics));
+  }, [topics]);
+  
+  // Custom target variables (allows scaling / swapping edital instantly)
+  const [concurso, setConcurso] = useState<string>("Professor - Rede Estadual do Ceará 2026");
+
+  const [profile, setProfile] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.examDate && !parsed.studyStartDate) {
+          // Default to July 9th, 2026 or current date if 2026 is today
+          parsed.studyStartDate = "2026-07-09";
+          localStorage.setItem("ia_aprova_profile", JSON.stringify(parsed));
+        }
+        return parsed;
+      } catch (e) {}
+    }
+    return {
+      discipline: "Matemática",
+      banca: "FUNECE",
+      studyHours: 3,
+      level: "intermediate",
+      streak: 3,
+      totalQuestions: 14,
+      totalCorrect: 10,
+      totalSeconds: 2400,
+      history: []
+    };
+  });
+
+  const [banca, setBanca] = useState<string>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        return JSON.parse(saved).banca || "FUNECE";
+      } catch (e) {}
+    }
+    return "FUNECE";
+  });
+
+  const [discipline, setDiscipline] = useState<string>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        return JSON.parse(saved).discipline || "Matemática";
+      } catch (e) {}
+    }
+    return "Matemática";
+  });
+
+  const [editalText, setEditalText] = useState<string>(
+    "Edital oficial SEDUC-CE de 2026. Prioriza LDB atualizada, Plano Nacional de Educação, Estatuto do Magistério do Ceará, Didática Geral, metodologias ativas e avaliação formativa."
+  );
+
+  // Persist profile and onboarding states
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_profile", JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_onboarded", String(onboarded));
+  }, [onboarded]);
+
+  // Sync profile when variables change
+  useEffect(() => {
+    setProfile(prev => ({
+      ...prev,
+      discipline,
+      banca
+    }));
+
+    // Generate discipline topics dynamically
+    const baseTopics = INITIAL_TOPICS.filter(t => t.category !== "especifico");
+    const specificList = (profile && profile.hasEdital && profile.editalTopics && profile.editalTopics.length > 0)
+      ? profile.editalTopics
+      : (DISCIPLINE_TOPICS[discipline] || DISCIPLINE_TOPICS["Geral / Outros"]);
+    
+    const mappedSpecifics: StudyTopic[] = specificList.map((spec, index) => ({
+      id: `specific-${index}`,
+      name: spec,
+      category: "especifico", // Map to especifico category for custom dashboard and simulator filtering
+      completed: false,
+      confidence: null,
+      questionsAnswered: 0,
+      questionsCorrect: 0
+    }));
+
+    const freshList = [...baseTopics, ...mappedSpecifics];
+
+    // Merge with saved topics to preserve progress
+    const saved = localStorage.getItem("ia_aprova_topics_v4");
+    if (saved) {
+      try {
+        const parsed: StudyTopic[] = JSON.parse(saved);
+        const merged = freshList.map(fresh => {
+          const matchingSaved = parsed.find(p => p.name === fresh.name);
+          if (matchingSaved) {
+            return {
+              ...fresh,
+              questionsAnswered: matchingSaved.questionsAnswered,
+              questionsCorrect: matchingSaved.questionsCorrect,
+              completed: matchingSaved.completed,
+              confidence: matchingSaved.confidence
+            };
+          }
+          return fresh;
+        });
+        setTopics(merged);
+        return;
+      } catch (e) {}
+    }
+
+    setTopics(freshList);
+  }, [discipline, banca, profile?.hasEdital, profile?.editalTopics]);
+
+  const handleAnswerRecorded = (category: string, isCorrect: boolean, timeSpent: number, topicName?: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      totalQuestions: prev.totalQuestions + 1,
+      totalCorrect: prev.totalCorrect + (isCorrect ? 1 : 0),
+      totalSeconds: prev.totalSeconds + timeSpent,
+      streak: isCorrect ? prev.streak + (prev.totalQuestions % 5 === 0 ? 1 : 0) : prev.streak
+    }));
+
+    const targetTopicName = topicName || currentTopic;
+
+    // Update topic questions tally
+    setTopics((prevTopics) => {
+      const hasExactMatch = prevTopics.some((t) => t.name === targetTopicName);
+      if (hasExactMatch) {
+        return prevTopics.map((topic) => {
+          if (topic.name === targetTopicName) {
+            const answered = topic.questionsAnswered + 1;
+            const correct = topic.questionsCorrect + (isCorrect ? 1 : 0);
+            return {
+              ...topic,
+              questionsAnswered: answered,
+              questionsCorrect: correct,
+              completed: correct >= 1 // mark completed if scored at least 1 correct
+            };
+          }
+          return topic;
+        });
+      } else {
+        // Fallback: update the first topic of the given category so category-level charts always update
+        let updated = false;
+        return prevTopics.map((topic) => {
+          if (topic.category === category && !updated) {
+            updated = true;
+            const answered = topic.questionsAnswered + 1;
+            const correct = topic.questionsCorrect + (isCorrect ? 1 : 0);
+            return {
+              ...topic,
+              questionsAnswered: answered,
+              questionsCorrect: correct,
+              completed: correct >= 1
+            };
+          }
+          return topic;
+        });
+      }
+    });
+  };
+
+  const handleUpdateTopicStats = (topicId: string, deltaAnswered: number, deltaCorrect: number, toggleCompleted?: boolean) => {
+    setTopics((prevTopics) => {
+      return prevTopics.map((topic) => {
+        if (topic.id === topicId) {
+          const answered = Math.max(0, topic.questionsAnswered + deltaAnswered);
+          const correct = Math.max(0, Math.min(answered, topic.questionsCorrect + deltaCorrect));
+          const completed = toggleCompleted !== undefined ? !topic.completed : (answered > 0 && correct >= 1);
+          return {
+            ...topic,
+            questionsAnswered: answered,
+            questionsCorrect: correct,
+            completed
+          };
+        }
+        return topic;
+      });
+    });
+
+    if (deltaAnswered !== 0 || deltaCorrect !== 0) {
+      setProfile((prev) => ({
+        ...prev,
+        totalQuestions: Math.max(0, prev.totalQuestions + deltaAnswered),
+        totalCorrect: Math.max(0, prev.totalCorrect + deltaCorrect)
+      }));
+    }
+  };
+
+  // If not onboarded, show Onboarding pre-registration screen
+  if (!onboarded) {
+    return (
+      <OnboardingModule
+        onComplete={(data) => {
+          const newProfile: UserProfile = {
+            name: data.name,
+            gender: data.gender,
+            age: data.age,
+            isTeacher: data.isTeacher,
+            discipline: data.discipline,
+            banca: "FUNECE",
+            studyHours: data.studyHours,
+            level: "intermediate",
+            streak: 1,
+            totalQuestions: 0,
+            totalCorrect: 0,
+            totalSeconds: 0,
+            examDate: data.examDate,
+            studyStartDate: data.examDate ? new Date().toISOString().split('T')[0] : undefined,
+            hasEdital: data.hasEdital,
+            editalFileName: data.editalFileName,
+            editalTopics: data.editalTopics,
+            history: []
+          };
+          setProfile(newProfile);
+          setDiscipline(data.discipline);
+          setOnboarded(true);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50/50 text-slate-800 font-sans antialiased">
+      {/* Upper Brand Bar */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xxs print:hidden">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10 shrink-0">
+                <GraduationCap className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <h1 className="font-display font-extrabold text-slate-950 text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent">
+                    Aprova Professor
+                  </h1>
+                  <span className="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md border border-emerald-100 uppercase tracking-wider">
+                    Seduc-CE 2026
+                  </span>
+                </div>
+                <p className="text-slate-400 text-[9px] sm:text-[10px] font-medium tracking-wide mt-0.5">
+                  Seu mentor pedagógico de alto desempenho
+                </p>
+              </div>
+            </div>
+
+            {/* Config & Stat Header badges + Dropdown Selector */}
+            <div className="flex items-center gap-3 md:gap-4">
+              {/* Stat badges (visible on desktop) */}
+              <div className="hidden lg:flex items-center gap-3">
+                <div className="bg-slate-50 border border-slate-100/50 rounded-xl px-3.5 py-1.5 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className="text-xs font-semibold text-slate-600">
+                    Disciplina: <span className="text-emerald-600 font-bold">{discipline}</span>
+                  </span>
+                </div>
+                <div className="bg-slate-50 border border-slate-100/50 rounded-xl px-3.5 py-1.5 flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-600">
+                    Banca: <span className="text-emerald-600 font-bold">{banca}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-1.5">
+                  <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
+                  <span>{profile.streak} dias</span>
+                </div>
+              </div>
+
+              {/* Redesigned Sleek Primary Dropdown View Switcher */}
+              <div className="relative">
+                <select
+                  id="module-switcher"
+                  value={activeModule}
+                  onChange={(e) => setActiveModule(e.target.value)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl border-none shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all appearance-none pr-10"
+                >
+                  <option value="dashboard" className="text-slate-800 bg-white font-semibold">📊 Painel de Controle</option>
+                  <option value="schedule" className="text-slate-800 bg-white font-semibold">📅 Cronograma de Estudos</option>
+                  <option value="syllabus" className="text-slate-800 bg-white font-semibold">📖 Guia do Edital</option>
+                  <option value="simulator" className="text-slate-800 bg-white font-semibold">📝 Simulador de Provas</option>
+                  <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Professor Mentor</option>
+                  <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA da Banca</option>
+                  <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustar Edital</option>
+                </select>
+                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-white">
+                  <ChevronDown className="w-4 h-4 opacity-85" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+ 
+       {/* Main Container - Single Column Workspace with Right Widget Panel */}
+       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+         <div className="flex flex-col lg:flex-row gap-8">
+           
+          {/* Left Navigation Sidebar (Desktop-only, clean, stylish) */}
+          <nav className="hidden lg:flex flex-col w-64 shrink-0 space-y-1 bg-white border border-slate-100 rounded-3xl p-4.5 shadow-xxs h-fit sticky top-20">
+            <div className="flex items-center gap-2 px-3 pb-3 mb-2 border-b border-slate-50">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Navegação</span>
+            </div>
+            
+            <button
+              onClick={() => setActiveModule("dashboard")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "dashboard"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <LayoutDashboard className="w-4.5 h-4.5 text-emerald-600" />
+              Painel de Controle
+            </button>
+
+            <button
+              onClick={() => setActiveModule("schedule")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "schedule"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <Calendar className="w-4.5 h-4.5 text-emerald-600" />
+              Cronograma de Estudos
+            </button>
+
+            <button
+              onClick={() => setActiveModule("syllabus")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "syllabus"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <BookOpen className="w-4.5 h-4.5 text-emerald-600" />
+              Guia do Edital
+            </button>
+
+            <button
+              onClick={() => setActiveModule("simulator")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "simulator"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <HelpCircle className="w-4.5 h-4.5 text-emerald-600" />
+              Simulador de Provas
+            </button>
+
+            <button
+              onClick={() => setActiveModule("chat")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "chat"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <MessageSquare className="w-4.5 h-4.5 text-emerald-600" />
+              Professor Mentor
+            </button>
+
+            <button
+              onClick={() => setActiveModule("dna")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "dna"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <Fingerprint className="w-4.5 h-4.5 text-emerald-600" />
+              DNA da Banca
+            </button>
+
+            <button
+              onClick={() => setActiveModule("config")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "config"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <Settings className="w-4.5 h-4.5 text-emerald-600" />
+              Ajustar Edital
+            </button>
+          </nav>
+
+           {/* Main Content Column */}
+           <main className="flex-1 min-w-0">
+             <div className="min-h-[60vh]">
+               <AnimatePresence mode="wait">
+                {(activeModule === "dashboard" || activeModule === "schedule") && (
+                  <motion.div
+                    key="dashboard-group"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <DashboardModule
+                      profile={profile}
+                      topics={topics}
+                      onChangeModule={setActiveModule}
+                      onTopicClick={setCurrentTopic}
+                      onUpdateTopicStats={handleUpdateTopicStats}
+                      activeTab={activeModule === "schedule" ? "schedule" : "mapping"}
+                      setActiveTab={(tab) => {
+                        if (tab === "schedule") {
+                          setActiveModule("schedule");
+                        } else {
+                          setActiveModule("dashboard");
+                        }
+                      }}
+                      flashcards={flashcards}
+                      onOpenFlashcards={() => setIsFlashcardModalOpen(true)}
+                    />
+                  </motion.div>
+                )}
+
+                {activeModule === "syllabus" && (
+                  <motion.div
+                    key="syllabus"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <SyllabusModule 
+                      profile={profile} 
+                      onChangeModule={setActiveModule}
+                      onTopicClick={setCurrentTopic}
+                    />
+                  </motion.div>
+                )}
+
+                {activeModule === "simulator" && (
+                  <motion.div
+                    key="simulator"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <SimulatorModule
+                      profile={profile}
+                      topics={topics}
+                      onAnswerRecorded={handleAnswerRecorded}
+                      currentTopic={currentTopic}
+                      setCurrentTopic={setCurrentTopic}
+                      flashcards={flashcards}
+                      onSaveFlashcard={handleSaveFlashcard}
+                      onOpenFlashcards={() => setIsFlashcardModalOpen(true)}
+                    />
+                  </motion.div>
+                )}
+
+                {activeModule === "chat" && (
+                  <motion.div
+                    key="chat"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <MentorChatModule
+                      profile={profile}
+                      currentTopic={currentTopic}
+                      topics={topics}
+                    />
+                  </motion.div>
+                )}
+
+                {activeModule === "dna" && (
+                  <motion.div
+                    key="dna"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <DnaModule discipline={discipline} banca={banca} />
+                  </motion.div>
+                )}
+
+                {activeModule === "config" && (
+                  <motion.div
+                    key="config"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-100 p-6 md:p-8 shadow-xs space-y-6"
+                  >
+                    <div className="border-b border-slate-50 pb-4">
+                      <h3 className="font-display text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Sliders className="w-5 h-5 text-emerald-600" />
+                        Customização de Escala (White-Label)
+                      </h3>
+                      <p className="text-slate-400 text-xs mt-1">
+                        Como sugerido, você pode modificar o escopo do edital e a disciplina do candidato para mudar dinamicamente as respostas do Professor Mentor e do gerador de simulados.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                          Concurso Alvo / Campanha
+                        </label>
+                        <input
+                          type="text"
+                          value={concurso}
+                          onChange={(e) => setConcurso(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Banca Organizadora
+                          </label>
+                          <select
+                            value={banca}
+                            onChange={(e) => setBanca(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
+                          >
+                            <option value="FUNECE">FUNECE (Fundação UECE)</option>
+                            <option value="IDECAN">IDECAN (Oficial Seduc-CE)</option>
+                            <option value="CESPE / Cebraspe">CESPE / Cebraspe</option>
+                            <option value="FGV">FGV</option>
+                            <option value="FCC">FCC</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Disciplina do Candidato
+                          </label>
+                          <select
+                            value={discipline}
+                            onChange={(e) => setDiscipline(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
+                          >
+                            <option value="Sociologia">Sociologia</option>
+                            <option value="Matemática">Matemática</option>
+                            <option value="História">História</option>
+                            <option value="Língua Portuguesa">Língua Portuguesa</option>
+                            <option value="Biologia">Biologia</option>
+                            <option value="Geografia">Geografia</option>
+                            <option value="Geral / Outros">Geral / Outros</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                          Instruções do Edital Vigente
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={editalText}
+                          onChange={(e) => setEditalText(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none resize-none"
+                        />
+                      </div>
+
+                      <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-xl p-4 flex gap-3">
+                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-bold">Configurações Atualizadas!</h4>
+                          <p className="mt-0.5 leading-normal">
+                            O Professor Mentor agora está calibrado para simular o estilo de cobrança específico de <strong>{banca}</strong> com foco pedagógico em <strong>{discipline}</strong>.
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setActiveModule("dashboard")}
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all text-center block"
+                      >
+                        Voltar ao Painel
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <FlashcardsModal
+        isOpen={isFlashcardModalOpen}
+        onClose={() => setIsFlashcardModalOpen(false)}
+        flashcards={flashcards}
+        onDeleteFlashcard={handleDeleteFlashcard}
+        topics={topics}
+        onPracticeTopic={(topicName) => {
+          setCurrentTopic(topicName);
+          setActiveModule("simulator");
+        }}
+      />
+
+      {/* Aesthetic Footer */}
+      <footer className="border-t border-slate-100 bg-white mt-12 py-8 text-center text-slate-400 text-xs">
+        <p className="font-display font-medium text-slate-500">Aprova Professor • Rede Estadual do Ceará 2026</p>
+        <p className="text-xxs mt-1 text-slate-400">Desenvolvido com diretrizes de Neurociência Cognitiva e Metodologias de Aprendizagem Ativa.</p>
+      </footer>
+    </div>
+  );
+}

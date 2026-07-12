@@ -1,0 +1,6 @@
+{
+  "name": "Aprova Professor Seduc",
+  "description": "Plataforma de mentoria pedagógica e simulador de provas oficiais para o concurso de professores da rede estadual do Ceará (Seduc-CE 2026).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
