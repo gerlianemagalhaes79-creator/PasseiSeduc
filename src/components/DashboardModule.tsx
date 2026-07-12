@@ -733,7 +733,7 @@ export default function DashboardModule({
       )}
 
       {/* NOVO: Banner de Contagem Regressiva para a Prova e Edital (Luminoso, Compacto e Minimalista) */}
-      {profile.examDate && (
+      {profile.examDate && activeTab === "mapping" && (
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -756,7 +756,7 @@ export default function DashboardModule({
                 {profile.hasEdital ? (
                   <span>Edital <strong>{profile.editalFileName}</strong> ativo.</span>
                 ) : (
-                  <span>Cronograma de preparação diária ativo.</span>
+                  <span>Cronograma de preparação diária active.</span>
                 )}
               </p>
             </div>
@@ -797,55 +797,57 @@ export default function DashboardModule({
       )}
 
       {/* Metrics Banner */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          {
-            label: "Duração do Estudo",
-            value: `${Math.round(profile.totalSeconds / 60)} min`,
-            sub: "Tempo ativo hoje",
-            icon: Clock,
-            color: "text-indigo-600 bg-indigo-50 border-indigo-100/50"
-          },
-          {
-            label: "Questões Respondidas",
-            value: profile.totalQuestions,
-            sub: `${profile.totalCorrect} acertos`,
-            icon: Award,
-            color: "text-emerald-600 bg-emerald-50 border-emerald-100/50"
-          },
-          {
-            label: "Aproveitamento",
-            value: `${hitRate}%`,
-            sub: hitRate >= 70 ? "Zona de Aprovação 🎯" : "Meta: Mínimo 75%",
-            icon: TrendingUp,
-            color: "text-amber-600 bg-amber-50 border-amber-100/50"
-          },
-          {
-            label: "Estudos Consecutivos",
-            value: `${profile.streak} Dias`,
-            sub: "Ritmo de aprovação",
-            icon: Flame,
-            color: "text-rose-600 bg-rose-50 border-rose-100/50"
-          }
-        ].map((metric, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="bg-white rounded-xl border border-slate-100 p-3.5 shadow-xs flex items-center gap-3 hover:shadow-md transition-all"
-          >
-            <div className={`p-2 rounded-lg border shrink-0 ${metric.color}`}>
-              <metric.icon className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">{metric.label}</p>
-              <h4 className="font-mono text-base font-extrabold text-slate-800 mt-0.5">{metric.value}</h4>
-              <p className="text-slate-400 text-[10px] font-medium mt-0.5">{metric.sub}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+      {activeTab === "mapping" && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            {
+              label: "Duração do Estudo",
+              value: `${Math.round(profile.totalSeconds / 60)} min`,
+              sub: "Tempo ativo hoje",
+              icon: Clock,
+              color: "text-indigo-600 bg-indigo-50 border-indigo-100/50"
+            },
+            {
+              label: "Questões Respondidas",
+              value: profile.totalQuestions,
+              sub: `${profile.totalCorrect} acertos`,
+              icon: Award,
+              color: "text-emerald-600 bg-emerald-50 border-emerald-100/50"
+            },
+            {
+              label: "Aproveitamento",
+              value: `${hitRate}%`,
+              sub: hitRate >= 70 ? "Zona de Aprovação 🎯" : "Meta: Mínimo 75%",
+              icon: TrendingUp,
+              color: "text-amber-600 bg-amber-50 border-amber-100/50"
+            },
+            {
+              label: "Estudos Consecutivos",
+              value: `${profile.streak} Dias`,
+              sub: "Ritmo de aprovação",
+              icon: Flame,
+              color: "text-rose-600 bg-rose-50 border-rose-100/50"
+            }
+          ].map((metric, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-white rounded-xl border border-slate-100 p-3.5 shadow-xs flex items-center gap-3 hover:shadow-md transition-all"
+            >
+              <div className={`p-2 rounded-lg border shrink-0 ${metric.color}`}>
+                <metric.icon className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">{metric.label}</p>
+                <h4 className="font-mono text-base font-extrabold text-slate-800 mt-0.5">{metric.value}</h4>
+                <p className="text-slate-400 text-[10px] font-medium mt-0.5">{metric.sub}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
         {activeTab === "mapping" ? (
@@ -2543,7 +2545,10 @@ export default function DashboardModule({
             </div>
             <div className="text-right">
               <span className="inline-block text-[10px] font-bold font-mono bg-slate-950 text-white px-3 py-1 rounded-md uppercase tracking-wider">
-                JULHO DE 2026
+                {profile.examDate 
+                  ? `${new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')} - ${new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '')}`.toUpperCase()
+                  : "JULHO DE 2026"
+                }
               </span>
               <p className="text-[9px] text-slate-500 font-mono mt-1">Ref: FUNECE/SEDUC</p>
             </div>
@@ -2599,7 +2604,7 @@ export default function DashboardModule({
           <table className="w-full border-collapse text-[10px] text-left">
             <thead>
               <tr className="bg-slate-900 text-white font-mono uppercase tracking-wider text-[9px] border-b border-slate-900">
-                <th className="p-2.5 font-bold w-12 text-center">Dia</th>
+                <th className="p-2.5 font-bold w-12 text-center">Data</th>
                 <th className="p-2.5 font-bold w-24">Semana</th>
                 <th className="p-2.5 font-bold w-36">Área / Disciplina</th>
                 <th className="p-2.5 font-bold">Conteúdo Programático Detalhado</th>
@@ -2608,87 +2613,111 @@ export default function DashboardModule({
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate() }).map((_, i) => {
-                const dayNum = i + 1;
-                const dateTopic = getTopicForDate(currentCalendarYear, currentCalendarMonth, dayNum);
-                
-                const weekdayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-                const weekdayIndex = new Date(currentCalendarYear, currentCalendarMonth, dayNum).getDay();
-                const weekdayName = weekdayNames[weekdayIndex];
-                
-                const itemIndex = scheduleItems.findIndex(item => {
-                  if (!item || !item.day) return false;
-                  return item.day.toLowerCase().startsWith(weekdayName.toLowerCase().substring(0, 3));
-                });
-                
-                const scheduleItem = dateTopic ? {
-                  day: dateTopic.title,
-                  desc: dateTopic.desc,
-                  color: dateTopic.color,
-                  time: dateTopic.time,
-                  notes: dateTopic.notes,
-                  isExam: (dateTopic as any).isExam
-                } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
-
-                const cleanInfo = scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "Livre / Revisão", subtopic: "Folga programada, simulados ou revisão de pontos fracos" };
-                const isExam = scheduleItem && (scheduleItem as any).isExam;
-
-                // Color themes for beautiful print badges (black-and-white and gray safe)
-                let badgeClass = "border border-slate-300 bg-slate-50 text-slate-800";
-                if (scheduleItem?.color) {
-                  if (scheduleItem.color.includes("indigo")) badgeClass = "border border-indigo-200 bg-indigo-50 text-indigo-900 font-bold";
-                  else if (scheduleItem.color.includes("emerald")) badgeClass = "border border-emerald-200 bg-emerald-50 text-emerald-900 font-bold";
-                  else if (scheduleItem.color.includes("purple")) badgeClass = "border border-purple-200 bg-purple-50 text-purple-900 font-bold";
-                  else if (scheduleItem.color.includes("amber")) badgeClass = "border border-amber-200 bg-amber-50 text-amber-900 font-bold";
+              {(() => {
+                const printDates: Date[] = [];
+                if (profile.examDate) {
+                  const start = new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00");
+                  start.setHours(0, 0, 0, 0);
+                  const end = new Date(profile.examDate + "T12:00:00");
+                  end.setHours(0, 0, 0, 0);
+                  
+                  let current = new Date(start);
+                  let maxIterations = 365;
+                  while (current <= end && maxIterations > 0) {
+                    printDates.push(new Date(current));
+                    current.setDate(current.getDate() + 1);
+                    maxIterations--;
+                  }
+                } else {
+                  const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+                  for (let i = 1; i <= daysInMonth; i++) {
+                    printDates.push(new Date(currentCalendarYear, currentCalendarMonth, i));
+                  }
                 }
 
-                return (
-                  <tr key={dayNum} className={`border-b border-slate-200 ${isExam ? "bg-rose-50" : dayNum % 2 === 0 ? "bg-slate-50/40" : "bg-white"}`}>
-                    <td className="p-2.5 border-r border-slate-200 font-mono text-center font-bold text-slate-950 text-xs">
-                      {dayNum}
-                    </td>
-                    <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-700">
-                      {weekdayName}
-                    </td>
-                    <td className="p-2.5 border-r border-slate-200">
-                      {isExam ? (
-                        <span className="inline-block px-2 py-1 text-[9px] rounded-md font-extrabold uppercase border border-rose-300 bg-rose-100 text-rose-950 tracking-wide">
-                          🏁 CONCURSO
-                        </span>
-                      ) : scheduleItem ? (
-                        <span className={`inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-semibold ${badgeClass}`}>
-                          {cleanInfo.subject}
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-medium border border-slate-200 bg-slate-100 text-slate-500">
-                          Livre
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-2.5 border-r border-slate-200 leading-normal">
-                      <div className="font-bold text-slate-950 text-xs">
-                        {isExam ? "GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026" : cleanInfo.subtopic}
-                      </div>
-                      {scheduleItem?.notes && (
-                        <div className="text-[9px] text-slate-500 font-medium italic mt-0.5 flex gap-1 items-start">
-                          <span className="text-amber-500 shrink-0">📌</span>
-                          <span>Orientação: {scheduleItem.notes}</span>
+                return printDates.map((date, idx) => {
+                  const dayNum = date.getDate();
+                  const dateTopic = getTopicForDate(date.getFullYear(), date.getMonth(), dayNum);
+                  
+                  const weekdayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+                  const weekdayIndex = date.getDay();
+                  const weekdayName = weekdayNames[weekdayIndex];
+                  
+                  const itemIndex = scheduleItems.findIndex(item => {
+                    if (!item || !item.day) return false;
+                    return item.day.toLowerCase().startsWith(weekdayName.toLowerCase().substring(0, 3));
+                  });
+                  
+                  const scheduleItem = dateTopic ? {
+                    day: dateTopic.title,
+                    desc: dateTopic.desc,
+                    color: dateTopic.color,
+                    time: dateTopic.time,
+                    notes: dateTopic.notes,
+                    isExam: (dateTopic as any).isExam
+                  } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
+
+                  const cleanInfo = scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "Livre / Revisão", subtopic: "Folga programada, simulados ou revisão de pontos fracos" };
+                  const isExam = scheduleItem && (scheduleItem as any).isExam;
+
+                  let badgeClass = "border border-slate-300 bg-slate-50 text-slate-800";
+                  if (scheduleItem?.color) {
+                    if (scheduleItem.color.includes("indigo")) badgeClass = "border border-indigo-200 bg-indigo-50 text-indigo-900 font-bold";
+                    else if (scheduleItem.color.includes("emerald")) badgeClass = "border border-emerald-200 bg-emerald-50 text-emerald-900 font-bold";
+                    else if (scheduleItem.color.includes("purple")) badgeClass = "border border-purple-200 bg-purple-50 text-purple-900 font-bold";
+                    else if (scheduleItem.color.includes("amber")) badgeClass = "border border-amber-200 bg-amber-50 text-amber-900 font-bold";
+                  }
+
+                  const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+                  return (
+                    <tr key={idx} className={`border-b border-slate-200 ${isExam ? "bg-rose-50" : dayNum % 2 === 0 ? "bg-slate-50/40" : "bg-white"}`}>
+                      <td className="p-2.5 border-r border-slate-200 font-mono text-center font-bold text-slate-950 text-xs">
+                        {formattedDate}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-700">
+                        {weekdayName}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-200">
+                        {isExam ? (
+                          <span className="inline-block px-2 py-1 text-[9px] rounded-md font-extrabold uppercase border border-rose-300 bg-rose-100 text-rose-950 tracking-wide">
+                            🏁 CONCURSO
+                          </span>
+                        ) : scheduleItem ? (
+                          <span className={`inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-semibold ${badgeClass}`}>
+                            {cleanInfo.subject}
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-medium border border-slate-200 bg-slate-100 text-slate-500">
+                            Livre
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-200 leading-normal">
+                        <div className="font-bold text-slate-950 text-xs">
+                          {isExam ? "GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026" : cleanInfo.subtopic}
                         </div>
-                      )}
-                    </td>
-                    <td className="p-2.5 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-700 font-medium">
-                      {scheduleItem ? scheduleItem.time : "Meta Livre"}
-                    </td>
-                    <td className="p-2.5 text-center text-[10px] text-slate-400 font-mono font-bold">
-                      <div className="flex justify-center gap-1">
-                        <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">T</span>
-                        <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">Q</span>
-                        <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">R</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                        {scheduleItem?.notes && (
+                          <div className="text-[9px] text-slate-500 font-medium italic mt-0.5 flex gap-1 items-start">
+                            <span className="text-amber-500 shrink-0">📌</span>
+                            <span>Orientação: {scheduleItem.notes}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-700 font-medium">
+                        {scheduleItem ? scheduleItem.time : "Meta Livre"}
+                      </td>
+                      <td className="p-2.5 text-center text-[10px] text-slate-400 font-mono font-bold">
+                        <div className="flex justify-center gap-1">
+                          <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">T</span>
+                          <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">Q</span>
+                          <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">R</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </table>
         </div>
