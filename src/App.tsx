@@ -102,6 +102,15 @@ export default function App() {
           parsed.studyStartDate = "2026-07-09";
           localStorage.setItem("ia_aprova_profile", JSON.stringify(parsed));
         }
+        if (!parsed.history || parsed.history.length === 0) {
+          parsed.history = [
+            { date: "07/07", score: 4, total: 6, topic: "Didática Geral" },
+            { date: "08/07", score: 5, total: 7, topic: "LDB e LRF" },
+            { date: "09/07", score: 6, total: 8, topic: "Estatuto do Magistério" },
+            { date: "10/07", score: 7, total: 9, topic: "Metodologias Ativas" },
+            { date: "11/07", score: 10, total: 12, topic: "Língua Portuguesa" }
+          ];
+        }
         return parsed;
       } catch (e) {}
     }
@@ -114,7 +123,13 @@ export default function App() {
       totalQuestions: 14,
       totalCorrect: 10,
       totalSeconds: 2400,
-      history: []
+      history: [
+        { date: "07/07", score: 4, total: 6, topic: "Didática Geral" },
+        { date: "08/07", score: 5, total: 7, topic: "LDB e LRF" },
+        { date: "09/07", score: 6, total: 8, topic: "Estatuto do Magistério" },
+        { date: "10/07", score: 7, total: 9, topic: "Metodologias Ativas" },
+        { date: "11/07", score: 10, total: 12, topic: "Língua Portuguesa" }
+      ]
     };
   });
 
@@ -204,15 +219,38 @@ export default function App() {
   }, [discipline, banca, profile?.hasEdital, profile?.editalTopics]);
 
   const handleAnswerRecorded = (category: string, isCorrect: boolean, timeSpent: number, topicName?: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      totalQuestions: prev.totalQuestions + 1,
-      totalCorrect: prev.totalCorrect + (isCorrect ? 1 : 0),
-      totalSeconds: prev.totalSeconds + timeSpent,
-      streak: isCorrect ? prev.streak + (prev.totalQuestions % 5 === 0 ? 1 : 0) : prev.streak
-    }));
-
     const targetTopicName = topicName || currentTopic;
+    
+    setProfile((prev) => {
+      const todayStr = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const currentHistory = prev.history ? [...prev.history] : [];
+      const lastEntry = currentHistory[currentHistory.length - 1];
+      
+      if (lastEntry && lastEntry.date === todayStr) {
+        currentHistory[currentHistory.length - 1] = {
+          ...lastEntry,
+          score: lastEntry.score + (isCorrect ? 1 : 0),
+          total: lastEntry.total + 1,
+          topic: targetTopicName || lastEntry.topic
+        };
+      } else {
+        currentHistory.push({
+          date: todayStr,
+          score: (isCorrect ? 1 : 0),
+          total: 1,
+          topic: targetTopicName || "Geral"
+        });
+      }
+
+      return {
+        ...prev,
+        totalQuestions: prev.totalQuestions + 1,
+        totalCorrect: prev.totalCorrect + (isCorrect ? 1 : 0),
+        totalSeconds: prev.totalSeconds + timeSpent,
+        streak: isCorrect ? prev.streak + (prev.totalQuestions % 5 === 0 ? 1 : 0) : prev.streak,
+        history: currentHistory
+      };
+    });
 
     // Update topic questions tally
     setTopics((prevTopics) => {
@@ -302,7 +340,13 @@ export default function App() {
             hasEdital: data.hasEdital,
             editalFileName: data.editalFileName,
             editalTopics: data.editalTopics,
-            history: []
+            history: [
+              { date: "07/07", score: 4, total: 6, topic: "Didática Geral" },
+              { date: "08/07", score: 5, total: 7, topic: "LDB e LRF" },
+              { date: "09/07", score: 6, total: 8, topic: "Estatuto do Magistério" },
+              { date: "10/07", score: 7, total: 9, topic: "Metodologias Ativas" },
+              { date: "11/07", score: 10, total: 12, topic: "Língua Portuguesa" }
+            ]
           };
           setProfile(newProfile);
           setDiscipline(data.discipline);

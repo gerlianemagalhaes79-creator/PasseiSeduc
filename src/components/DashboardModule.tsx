@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { UserProfile, StudyTopic } from "../types";
 import { Award, BookOpen, Clock, Flame, GraduationCap, TrendingUp, CheckCircle, ListChecks, Calendar, CheckSquare, Check, Edit3, Plus, Trash2, RotateCcw, Info, X, Save, ChevronDown, ChevronUp, Brain, Search, Sparkles, Target, Filter, HelpCircle, ChevronLeft, ChevronRight, CalendarDays, ExternalLink, Lightbulb, BookOpenCheck, HelpCircle as QuestionIcon, Printer, LayoutDashboard, Layers } from "lucide-react";
 import { motion } from "motion/react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { getStudyGuideForTopic } from "../data/topicStudyGuides";
 
 interface DashboardProps {
@@ -621,6 +621,17 @@ export default function DashboardModule({
     };
   });
 
+  const trendData = (profile.history || []).map((entry) => {
+    const accuracy = entry.total > 0 ? Math.round((entry.score / entry.total) * 100) : 0;
+    return {
+      date: entry.date,
+      "Acertos": entry.score,
+      "Questões": entry.total,
+      "Aproveitamento": accuracy,
+      "Assunto": entry.topic
+    };
+  });
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -743,9 +754,9 @@ export default function DashboardModule({
               </div>
               <p className="text-slate-500 text-xxs leading-normal font-medium max-w-xl">
                 {profile.hasEdital ? (
-                  <span>📑 Edital <strong>{profile.editalFileName}</strong> ativo! Tópicos estruturados e distribuídos de forma equilibrada no calendário.</span>
+                  <span>Edital <strong>{profile.editalFileName}</strong> ativo.</span>
                 ) : (
-                  <span>Seu cronograma de estudos foi reprogramado para otimizar seu tempo de preparação diária.</span>
+                  <span>Cronograma de preparação diária ativo.</span>
                 )}
               </p>
             </div>
@@ -841,109 +852,220 @@ export default function DashboardModule({
           <>
             {/* Main section: Study Progress & Content Map */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Chart Card */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider">Progresso de Acertos por Categoria</h3>
-                <p className="text-slate-400 text-xxs">Desempenho comparativo de acertos nas provas e simulados</p>
-              </div>
-              
-              {/* View Toggle */}
-              <div className="flex bg-slate-100 p-1 rounded-xl self-start sm:self-center">
-                <button
-                  type="button"
-                  onClick={() => setChartViewMode("count")}
-                  className={`px-2.5 py-1 text-xxs font-semibold rounded-lg transition-all cursor-pointer ${
-                    chartViewMode === "count"
-                      ? "bg-white text-slate-800 shadow-xxs"
-                      : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  Quantidade
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartViewMode("percent")}
-                  className={`px-2.5 py-1 text-xxs font-semibold rounded-lg transition-all cursor-pointer ${
-                    chartViewMode === "percent"
-                      ? "bg-white text-slate-800 shadow-xxs"
-                      : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  Aproveitamento (%)
-                </button>
-              </div>
-            </div>
-
-            {/* Recharts Container */}
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="category"
-                    stroke="#94a3b8"
-                    fontSize={10}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={10}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(val) => chartViewMode === "percent" ? `${val}%` : val}
-                  />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                  {chartViewMode === "count" ? (
-                    <>
-                      <Bar dataKey="Respondidas" name="Respondidas" fill="#cbd5e1" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                      <Bar dataKey="Corretas" name="Corretas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                    </>
-                  ) : (
-                    <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[4, 4, 0, 0]} maxBarSize={36}>
-                      {chartData.map((entry, index) => {
-                        let barColor = "#3b82f6"; // blue
-                        if (entry.key === "didatica") barColor = "#10b981"; // emerald
-                        if (entry.key === "ceara") barColor = "#a855f7"; // purple
-                        if (entry.key === "comuns") barColor = "#6366f1"; // indigo
-                        if (entry.key === "especifico") barColor = "#f59e0b"; // amber
-                        return <Cell key={`cell-${index}`} fill={barColor} />;
-                      })}
-                    </Bar>
-                  )}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            {/* Chart Legend Summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-4 border-t border-slate-100">
-              {chartData.map((item, index) => {
-                let badgeColor = "bg-blue-505";
-                if (item.key === "legislacao") badgeColor = "bg-blue-500";
-                if (item.key === "didatica") badgeColor = "bg-emerald-500";
-                if (item.key === "ceara") badgeColor = "bg-purple-500";
-                if (item.key === "comuns") badgeColor = "bg-indigo-500";
-                if (item.key === "especifico") badgeColor = "bg-amber-500";
-
-                return (
-                  <div key={index} className="space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${badgeColor}`}></span>
-                      <span className="text-[10px] font-bold text-slate-700">{item.category}</span>
+              {/* Grid de Gráficos de Alto Desempenho */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                
+                {/* Gráfico 1: Desempenho por Categoria (Barras) */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider">Progresso de Acertos por Categoria</h3>
+                      <p className="text-slate-400 text-xxs">Desempenho comparativo de acertos nas provas e simulados</p>
                     </div>
-                    <p className="text-[10px] text-slate-400 font-mono pl-3.5">
-                      {item.Corretas}/{item.Respondidas} acg. ({item.Aproveitamento}%)
-                    </p>
+                    
+                    {/* View Toggle */}
+                    <div className="flex bg-slate-100 p-1 rounded-xl self-start sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => setChartViewMode("count")}
+                        className={`px-2.5 py-1 text-xxs font-semibold rounded-lg transition-all cursor-pointer ${
+                          chartViewMode === "count"
+                            ? "bg-white text-slate-800 shadow-xxs"
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        Quantidade
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setChartViewMode("percent")}
+                        className={`px-2.5 py-1 text-xxs font-semibold rounded-lg transition-all cursor-pointer ${
+                          chartViewMode === "percent"
+                            ? "bg-white text-slate-800 shadow-xxs"
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        Aproveitamento (%)
+                      </button>
+                    </div>
                   </div>
-                );
-              })}
+
+                  {/* Recharts Container */}
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="category"
+                          stroke="#94a3b8"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="#94a3b8"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(val) => chartViewMode === "percent" ? `${val}%` : val}
+                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                        {chartViewMode === "count" ? (
+                          <>
+                            <Bar dataKey="Respondidas" name="Respondidas" fill="#cbd5e1" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                            <Bar dataKey="Corretas" name="Corretas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                          </>
+                        ) : (
+                          <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                            {chartData.map((entry, index) => {
+                              let barColor = "#3b82f6"; // blue
+                              if (entry.key === "didatica") barColor = "#10b981"; // emerald
+                              if (entry.key === "ceara") barColor = "#a855f7"; // purple
+                              if (entry.key === "comuns") barColor = "#6366f1"; // indigo
+                              if (entry.key === "especifico") barColor = "#f59e0b"; // amber
+                              return <Cell key={`cell-${index}`} fill={barColor} />;
+                            })}
+                          </Bar>
+                        )}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Chart Legend Summary */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-4 border-t border-slate-100">
+                    {chartData.map((item, index) => {
+                      let badgeColor = "bg-blue-505";
+                      if (item.key === "legislacao") badgeColor = "bg-blue-500";
+                      if (item.key === "didatica") badgeColor = "bg-emerald-500";
+                      if (item.key === "ceara") badgeColor = "bg-purple-500";
+                      if (item.key === "comuns") badgeColor = "bg-indigo-500";
+                      if (item.key === "especifico") badgeColor = "bg-amber-500";
+
+                      return (
+                        <div key={index} className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${badgeColor}`}></span>
+                            <span className="text-[10px] font-bold text-slate-700">{item.category}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-mono pl-3.5">
+                            {item.Corretas}/{item.Respondidas} acg. ({item.Aproveitamento}%)
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Gráfico 2: Evolução de Acertos e Rendimento (Linha) */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider">Evolução do Rendimento</h3>
+                      <p className="text-slate-400 text-xxs">Histórico cronológico de acertos e aproveitamento (%) nos simulados</p>
+                    </div>
+                  </div>
+
+                  {trendData.length > 0 ? (
+                    <div className="h-56 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendData} margin={{ top: 10, right: 15, left: -25, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis
+                            dataKey="date"
+                            stroke="#94a3b8"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            stroke="#94a3b8"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            yAxisId="left"
+                          />
+                          <YAxis
+                            stroke="#94a3b8"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            orientation="right"
+                            yAxisId="right"
+                            tickFormatter={(val) => `${val}%`}
+                            domain={[0, 100]}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-slate-900 text-slate-100 p-3.5 rounded-xl border border-slate-800 shadow-xl space-y-1.5 text-xs font-sans">
+                                    <p className="font-bold text-slate-200">Sessão: {data.date}</p>
+                                    <p className="text-slate-400 font-semibold text-[10px] truncate max-w-[200px]">Último tema: {data.Assunto}</p>
+                                    <div className="space-y-1 font-mono text-[11px] pt-1 border-t border-slate-800">
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-slate-400">Total Respondidas:</span>
+                                        <span className="font-bold text-slate-300">{data.Questões}</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-emerald-400">Total Acertos:</span>
+                                        <span className="font-bold text-emerald-300">{data.Acertos}</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-indigo-400">Aproveitamento:</span>
+                                        <span className="font-bold text-indigo-300">{data.Aproveitamento}%</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="Acertos"
+                            name="Acertos (Qtd)"
+                            stroke="#10b981"
+                            strokeWidth={2.5}
+                            dot={{ r: 4, strokeWidth: 2, fill: "#fff" }}
+                            activeDot={{ r: 6 }}
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="Aproveitamento"
+                            name="Aproveitamento (%)"
+                            stroke="#6366f1"
+                            strokeWidth={2.5}
+                            dot={{ r: 4, strokeWidth: 2, fill: "#fff" }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="h-56 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-150 rounded-2xl bg-slate-50/30">
+                      <p className="text-xs font-semibold">Nenhum dado histórico registrado ainda</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Conclua simulados para traçar seu progresso cronológico!</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-100 text-[10px] font-bold text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded bg-emerald-500"></span>
+                      <span>Qtd de Acertos (Eixo Esq.)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded bg-indigo-500"></span>
+                      <span>% Aproveitamento (Eixo Dir.)</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
             </div>
-          </div>
-
-
-        </div>
 
 
           </>
