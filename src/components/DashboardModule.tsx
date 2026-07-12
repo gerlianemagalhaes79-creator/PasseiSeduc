@@ -721,26 +721,27 @@ export default function DashboardModule({
         </div>
       )}
 
-      {/* NOVO: Banner de Contagem Regressiva para a Prova e Edital */}
+      {/* NOVO: Banner de Contagem Regressiva para a Prova e Edital (Luminoso, Compacto e Minimalista) */}
       {profile.examDate && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans"
+          className="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans shadow-3xs"
         >
-          <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/10 rounded-full filter blur-2xl pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full filter blur-xl pointer-events-none"></div>
-          
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center border border-rose-500/30 shrink-0 animate-pulse">
-              <Target className="w-6 h-6 text-rose-400" />
+          <div className="flex items-center gap-3 shrink-1">
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center border border-emerald-100/50 shrink-0">
+              <Target className="w-5 h-5 text-emerald-600" />
             </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-rose-400 tracking-wider font-mono">Foco no Grande Dia • Cronograma de Reta Final</p>
-              <h3 className="font-display font-black text-sm sm:text-base text-slate-100 mt-0.5">
-                Data Prevista da Prova: <span className="text-emerald-400 font-mono">{new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR')}</span>
-              </h3>
-              <p className="text-slate-400 text-[10px] sm:text-xxs mt-0.5 max-w-xl font-medium leading-relaxed">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] uppercase font-black text-emerald-800 bg-emerald-100/60 px-2 py-0.5 rounded tracking-wider font-mono">
+                  FOCO NO GRANDE DIA • CRONOGRAMA DE RETA FINAL
+                </span>
+                <span className="text-slate-500 font-medium text-xxs font-mono bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
+                  Data Prevista da Prova: <span className="font-bold text-slate-700">{new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR')}</span>
+                </span>
+              </div>
+              <p className="text-slate-500 text-xxs leading-normal font-medium max-w-xl">
                 {profile.hasEdital ? (
                   <span>📑 Edital <strong>{profile.editalFileName}</strong> ativo! Tópicos estruturados e distribuídos de forma equilibrada no calendário.</span>
                 ) : (
@@ -750,30 +751,32 @@ export default function DashboardModule({
             </div>
           </div>
 
-          <div className="bg-slate-850 border border-slate-800 rounded-2xl px-5 py-3 flex flex-col items-center justify-center min-w-[140px] text-center shrink-0 relative z-10">
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col items-center justify-center min-w-[150px] text-center shrink-0">
             {(() => {
               const daysLeft = getDaysRemaining();
               if (daysLeft === null) return null;
               if (daysLeft < 0) {
                 return (
                   <>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Concluído</span>
-                    <span className="text-lg font-black text-slate-300 font-mono mt-0.5">FINALIZADO</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">CONTAGEM REGRESSIVA</span>
+                    <span className="text-xs font-black text-slate-500 font-mono mt-0.5">PROVA CONCLUÍDA</span>
                   </>
                 );
               } else if (daysLeft === 0) {
                 return (
                   <>
-                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest font-mono animate-bounce">É Hoje!</span>
-                    <span className="text-lg font-black text-rose-500 font-mono mt-0.5">DIA DA PROVA</span>
+                    <span className="text-[9px] font-bold text-rose-500 uppercase tracking-widest font-mono animate-pulse">É HOJE! 🎉</span>
+                    <span className="text-xs font-black text-rose-600 font-mono mt-0.5">DIA DA PROVA</span>
                   </>
                 );
               } else {
                 return (
                   <>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Contagem Regressiva</span>
-                    <span className="text-xl font-black text-emerald-400 font-mono mt-0.5">{daysLeft} {daysLeft === 1 ? 'Dia' : 'Dias'}</span>
-                    <span className="text-[9px] text-slate-400 font-semibold mt-0.5">restantes de estudo</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">CONTAGEM REGRESSIVA</span>
+                    <span className="text-sm font-black text-slate-800 font-mono mt-0.5">
+                      <strong className="text-emerald-600 font-black text-base">{daysLeft}</strong> {daysLeft === 1 ? 'Dia' : 'Dias'}
+                    </span>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">restante{daysLeft !== 1 ? 's' : ''} de estudo</span>
                   </>
                 );
               }
