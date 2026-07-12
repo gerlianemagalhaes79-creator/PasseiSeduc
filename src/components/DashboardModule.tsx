@@ -913,18 +913,38 @@ export default function DashboardModule({
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                         {chartViewMode === "count" ? (
                           <>
-                            <Bar dataKey="Respondidas" name="Respondidas" fill="#e2e8f0" radius={[5, 5, 0, 0]} maxBarSize={20} />
-                            <Bar dataKey="Corretas" name="Corretas" fill="#10b981" radius={[5, 5, 0, 0]} maxBarSize={20} />
+                            <Bar dataKey="Respondidas" name="Respondidas" radius={[5, 5, 0, 0]} maxBarSize={20}>
+                              {chartData.map((entry, index) => {
+                                let color = "#cbd5e1"; // default
+                                if (entry.key === "legislacao") color = "#93c5fd"; // light blue
+                                if (entry.key === "didatica") color = "#a7f3d0"; // light emerald
+                                if (entry.key === "ceara") color = "#e9d5ff"; // light purple
+                                if (entry.key === "comuns") color = "#c7d2fe"; // light indigo
+                                if (entry.key === "especifico") color = "#fde68a"; // light amber
+                                return <Cell key={`cell-resp-${index}`} fill={color} />;
+                              })}
+                            </Bar>
+                            <Bar dataKey="Corretas" name="Corretas" radius={[5, 5, 0, 0]} maxBarSize={20}>
+                              {chartData.map((entry, index) => {
+                                let color = "#475569"; // default
+                                if (entry.key === "legislacao") color = "#1d4ed8"; // vibrant blue
+                                if (entry.key === "didatica") color = "#10b981"; // vibrant emerald
+                                if (entry.key === "ceara") color = "#7e22ce"; // vibrant purple
+                                if (entry.key === "comuns") color = "#4338ca"; // vibrant indigo
+                                if (entry.key === "especifico") color = "#d97706"; // vibrant amber
+                                return <Cell key={`cell-corr-${index}`} fill={color} />;
+                              })}
+                            </Bar>
                           </>
                         ) : (
                           <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[5, 5, 0, 0]} maxBarSize={28}>
                             {chartData.map((entry, index) => {
                               let barColor = "#3b82f6"; // blue
-                              if (entry.key === "legislacao") barColor = "#3b82f6"; // blue
-                              if (entry.key === "didatica") barColor = "#10b981"; // emerald
-                              if (entry.key === "ceara") barColor = "#8b5cf6"; // purple
-                              if (entry.key === "comuns") barColor = "#6366f1"; // indigo
-                              if (entry.key === "especifico") barColor = "#f59e0b"; // amber
+                              if (entry.key === "legislacao") barColor = "#1d4ed8"; // blue-700
+                              if (entry.key === "didatica") barColor = "#10b981"; // emerald-600
+                              if (entry.key === "ceara") barColor = "#7e22ce"; // purple-700
+                              if (entry.key === "comuns") barColor = "#4338ca"; // indigo-700
+                              if (entry.key === "especifico") barColor = "#d97706"; // amber-700
                               return <Cell key={`cell-${index}`} fill={barColor} />;
                             })}
                           </Bar>

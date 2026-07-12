@@ -361,28 +361,28 @@ export default function App() {
       {/* Upper Brand Bar */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xxs print:hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10 shrink-0">
-                <GraduationCap className="w-5.5 h-5.5" />
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-tr from-emerald-600 to-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10 shrink-0">
+                <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <h1 className="font-display font-extrabold text-slate-950 text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+                  <h1 className="font-display font-extrabold text-slate-950 text-sm sm:text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent truncate">
                     Aprova Professor
                   </h1>
-                  <span className="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md border border-emerald-100 uppercase tracking-wider">
-                    Seduc-CE 2026
+                  <span className="bg-emerald-50 text-emerald-700 text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-100 uppercase tracking-wider shrink-0">
+                    Seduc-CE
                   </span>
                 </div>
-                <p className="text-slate-400 text-[9px] sm:text-[10px] font-medium tracking-wide mt-0.5">
+                <p className="text-slate-400 text-[9px] sm:text-[10px] font-medium tracking-wide mt-1 hidden md:block">
                   Seu mentor pedagógico de alto desempenho
                 </p>
               </div>
             </div>
 
             {/* Config & Stat Header badges + Dropdown Selector */}
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {/* Stat badges (visible on desktop) */}
               <div className="hidden lg:flex items-center gap-3">
                 <div className="bg-slate-50 border border-slate-100/50 rounded-xl px-3.5 py-1.5 flex items-center gap-2">
@@ -408,19 +408,19 @@ export default function App() {
                   id="module-switcher"
                   value={activeModule}
                   onChange={(e) => setActiveModule(e.target.value)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl border-none shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all appearance-none pr-10"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] sm:text-xs px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border-none shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all appearance-none pr-8 sm:pr-10"
                 >
-                  <option value="dashboard" className="text-slate-800 bg-white font-semibold">📊 Painel de Controle</option>
-                  <option value="schedule" className="text-slate-800 bg-white font-semibold">📅 Cronograma de Estudos</option>
-                  <option value="syllabus" className="text-slate-800 bg-white font-semibold">📖 Guia do Edital</option>
-                  <option value="simulator" className="text-slate-800 bg-white font-semibold">📝 Simulador de Provas</option>
-                  <option value="flashcards" className="text-slate-800 bg-white font-semibold">⚡ Estudar Flashcards</option>
-                  <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Professor Mentor</option>
-                  <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA da Banca</option>
-                  <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustar Edital</option>
+                  <option value="dashboard" className="text-slate-800 bg-white font-semibold">📊 Painel</option>
+                  <option value="schedule" className="text-slate-800 bg-white font-semibold">📅 Cronograma</option>
+                  <option value="syllabus" className="text-slate-800 bg-white font-semibold">📖 Guia Edital</option>
+                  <option value="simulator" className="text-slate-800 bg-white font-semibold">📝 Simulador</option>
+                  <option value="flashcards" className="text-slate-800 bg-white font-semibold">⚡ Flashcards</option>
+                  <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Mentor</option>
+                  <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA Banca</option>
+                  <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustes</option>
                 </select>
-                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-white">
-                  <ChevronDown className="w-4 h-4 opacity-85" />
+                <div className="absolute inset-y-0 right-2 sm:right-3 flex items-center pointer-events-none text-white">
+                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-85" />
                 </div>
               </div>
             </div>
