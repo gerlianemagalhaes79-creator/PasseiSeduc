@@ -123,6 +123,8 @@ export default function App() {
       totalQuestions: 14,
       totalCorrect: 10,
       totalSeconds: 2400,
+      examDate: "2026-09-26",
+      studyStartDate: "2026-07-09",
       history: [
         { date: "07/07", score: 4, total: 6, topic: "Didática Geral" },
         { date: "08/07", score: 5, total: 7, topic: "LDB e LRF" },
@@ -370,14 +372,9 @@ export default function App() {
                 <h1 className="font-display font-extrabold text-slate-950 text-sm sm:text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent truncate">
                   Aprova Professor
                 </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="bg-emerald-50 text-emerald-700 text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-100 uppercase tracking-wider shrink-0">
-                    SEDUC-CE 2026
-                  </span>
-                  <p className="text-slate-400 text-[9px] sm:text-[10px] font-medium tracking-wide hidden sm:block">
-                    • Seu mentor pedagógico de alto desempenho
-                  </p>
-                </div>
+                <p className="text-emerald-700 text-[10px] sm:text-xs font-extrabold tracking-wider uppercase mt-1">
+                  SEDUC CE 2026
+                </p>
               </div>
             </div>
 

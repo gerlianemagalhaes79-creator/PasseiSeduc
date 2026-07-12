@@ -915,35 +915,35 @@ export default function DashboardModule({
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                         {chartViewMode === "count" ? (
                           <>
-                            <Bar dataKey="Respondidas" name="Respondidas" radius={[5, 5, 0, 0]} maxBarSize={20}>
+                            <Bar dataKey="Respondidas" name="Respondidas" radius={[4, 4, 0, 0]} maxBarSize={20} fill="#64748b">
                               {chartData.map((entry, index) => {
-                                let color = "#cbd5e1"; // default
-                                if (entry.key === "legislacao") color = "#93c5fd"; // light blue
-                                if (entry.key === "didatica") color = "#a7f3d0"; // light emerald
-                                if (entry.key === "ceara") color = "#e9d5ff"; // light purple
-                                if (entry.key === "comuns") color = "#c7d2fe"; // light indigo
-                                if (entry.key === "especifico") color = "#fde68a"; // light amber
-                                return <Cell key={`cell-resp-${index}`} fill={color} />;
+                                let color = "#64748b"; // solid default slate
+                                if (entry.key === "legislacao") color = "#3b82f6"; // blue-500
+                                if (entry.key === "didatica") color = "#10b981"; // emerald-500
+                                if (entry.key === "ceara") color = "#a855f7"; // purple-500
+                                if (entry.key === "comuns") color = "#6366f1"; // indigo-500
+                                if (entry.key === "especifico") color = "#f59e0b"; // amber-500
+                                return <Cell key={`cell-resp-${index}`} fill={color} fillOpacity={0.6} />;
                               })}
                             </Bar>
-                            <Bar dataKey="Corretas" name="Corretas" radius={[5, 5, 0, 0]} maxBarSize={20}>
+                            <Bar dataKey="Corretas" name="Corretas" radius={[4, 4, 0, 0]} maxBarSize={20} fill="#334155">
                               {chartData.map((entry, index) => {
-                                let color = "#475569"; // default
-                                if (entry.key === "legislacao") color = "#1d4ed8"; // vibrant blue
-                                if (entry.key === "didatica") color = "#10b981"; // vibrant emerald
-                                if (entry.key === "ceara") color = "#7e22ce"; // vibrant purple
-                                if (entry.key === "comuns") color = "#4338ca"; // vibrant indigo
-                                if (entry.key === "especifico") color = "#d97706"; // vibrant amber
+                                let color = "#334155"; // dark slate
+                                if (entry.key === "legislacao") color = "#1d4ed8"; // blue-700
+                                if (entry.key === "didatica") color = "#047857"; // emerald-700
+                                if (entry.key === "ceara") color = "#7e22ce"; // purple-700
+                                if (entry.key === "comuns") color = "#4338ca"; // indigo-700
+                                if (entry.key === "especifico") color = "#b45309"; // amber-700
                                 return <Cell key={`cell-corr-${index}`} fill={color} />;
                               })}
                             </Bar>
                           </>
                         ) : (
-                          <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[5, 5, 0, 0]} maxBarSize={28}>
+                          <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[5, 5, 0, 0]} maxBarSize={28} fill="#2563eb">
                             {chartData.map((entry, index) => {
-                              let barColor = "#3b82f6"; // blue
+                              let barColor = "#2563eb"; // blue-600
                               if (entry.key === "legislacao") barColor = "#1d4ed8"; // blue-700
-                              if (entry.key === "didatica") barColor = "#10b981"; // emerald-600
+                              if (entry.key === "didatica") barColor = "#059669"; // emerald-600
                               if (entry.key === "ceara") barColor = "#7e22ce"; // purple-700
                               if (entry.key === "comuns") barColor = "#4338ca"; // indigo-700
                               if (entry.key === "especifico") barColor = "#d97706"; // amber-700
@@ -2427,7 +2427,7 @@ export default function DashboardModule({
                 ) : (
                   <div className="space-y-3">
                     <p>
-                      Seu cronograma completo do mês de Julho foi formatado especialmente para folhas de papel <strong>A4</strong> ou para salvar diretamente como arquivo <strong>PDF</strong>.
+                      Seu cronograma completo até o dia previsto da prova (<strong>{profile.examDate ? new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR') : "26/09/2026"}</strong>) foi formatado especialmente para folhas de papel <strong>A4</strong> ou para salvar diretamente como arquivo <strong>PDF</strong>.
                     </p>
 
                     <div className="p-4 bg-emerald-50/25 border border-emerald-100/50 rounded-2xl space-y-2.5">

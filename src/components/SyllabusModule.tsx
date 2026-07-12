@@ -124,6 +124,292 @@ interface Sector {
   points: SectorPoint[];
 }
 
+const sectors: Sector[] = [
+  {
+    id: "matematica",
+    code: 29,
+    name: "Conhecimentos Específicos: Matemática",
+    unit: "Centro de Ciências e Tecnologia - CCT / Fortaleza",
+    regime: "40h",
+    requirements: "Graduação em Matemática com Pós-graduação",
+    points: [
+      { num: 1, title: "Conjuntos Numéricos e Divisibilidade", desc: "Números inteiros, divisibilidade, números racionais, números irracionais e reais." },
+      { num: 2, title: "Igualdade e Domínio de Funções", desc: "Conceito de igualdade de funções, determinação do domínio de uma função." },
+      { num: 3, title: "Tipologias e Propriedades de Funções", desc: "Função injetiva, sobrejetiva, bijetiva, inversa, composição, funções crescentes, decrescentes, pares e ímpares." },
+      { num: 4, title: "Estudo das Funções Elementares", desc: "Funções lineares, constantes do 1º e 2º graus, modulares, polinomiais, logarítmicas e exponenciais." },
+      { num: 5, title: "Equações, Desigualdades e Inequações", desc: "Resolução e propriedades de equações, desigualdades e inequações algébricas." },
+      { num: 6, title: "Geometria Plana, Espacial e Analítica", desc: "Propriedades geométricas básicas, cálculo de áreas, volumes e estudo analítico no plano." },
+      { num: 7, title: "Trigonometria", desc: "Relações no triângulo retângulo, estudo do seno, cosseno e tangente e ciclo trigonométrico." },
+      { num: 8, title: "Sequências Numéricas e de Fibonacci", desc: "Estudo de sequências numéricas gerais e sequência especial de Fibonacci." },
+      { num: 9, title: "Progressões Aritméticas e Geométricas", desc: "Definição, termo geral, propriedades e cálculo de soma de PA e PG." },
+      { num: 10, title: "Matrizes, Determinantes e Sistemas Lineares", desc: "Álgebra matricial, determinantes de ordens superiores, discussão e resolução de sistemas lineares." },
+      { num: 11, title: "Análise Combinatória e Binômio de Newton", desc: "Permutações, arranjos, combinações e expansão do binômio de Newton." },
+      { num: 12, title: "Noções de Estatística", desc: "Medidas de tendência central, dispersão, distribuição de frequência, gráficos e tabelas." },
+      { num: 13, title: "Matemática Financeira", desc: "Proporção, porcentagem, juros simples e compostos, taxas de juros, capitalização e descontos." },
+      { num: 14, title: "Cálculo de Probabilidade e Números Complexos", desc: "Cálculo de probabilidade e forma algébrica e geométrica de números complexos." },
+      { num: 15, title: "Cálculo Diferencial e Integral", desc: "Cálculo diferencial e integral das funções de uma variável." },
+      { num: 16, title: "Ensino de Matemática, Transposição e PCNs", desc: "Noções de história da Matemática, avaliação e educação matemática (formas e instrumentos), transposição didática, uso de material concreto e aplicativos digitais, competências e habilidades propostas pelos PCN-EM." }
+    ]
+  },
+  {
+    id: "arte-educacao",
+    code: 15,
+    name: "Conhecimentos Específicos: Arte-Educação",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Graduação em Arte / Educação Artística com Pós-graduação",
+    points: [
+      { num: 1, title: "A arte na Educação para todos", desc: "Fundamentos do ensino sob as diretrizes da LDB, PCN e RCB." },
+      { num: 2, title: "Fundamentos e tendências pedagógicas", desc: "Estudo das tendências pedagógicas do ensino de Arte no Brasil." },
+      { num: 3, title: "A arte e a construção da cidadania", desc: "O papel da experiência artística no desenvolvimento da cidadania." },
+      { num: 4, title: "As diversas linguagens artísticas", desc: "Estudo das linguagens artísticas; Estética - conceitos e contextos." },
+      { num: 5, title: "Aspectos da cultura popular brasileira", desc: "Manifestações populares, formação histórica e multiculturalismo brasileiro." },
+      { num: 6, title: "A arte da pré-história brasileira e cearense", desc: "Pintura rupestre, arte indígena e arte africana na pré-história." },
+      { num: 7, title: "As artes visuais no Brasil e no Ceará", desc: "Do barroco colonial brasileiro aos dias atuais." },
+      { num: 8, title: "As artes audiovisuais", desc: "Linguagens da TV, cinema, fotografia e novos recursos e multimídia." },
+      { num: 9, title: "A música no Brasil e contribuição cearense", desc: "Evolução da música brasileira e cearense desde o período colonial." },
+      { num: 10, title: "O teatro no Brasil e no Ceará", desc: "Histórico, movimentos teatrais e dramaturgia cearense." },
+      { num: 11, title: "A dança no Brasil e no Ceará", desc: "Danças dramáticas, folclóricas, populares e eruditas." },
+      { num: 12, title: "Principais movimentos artísticos do século XX", desc: "Vanguardas artísticas do século XX no Brasil." },
+      { num: 13, title: "Lei n° 11.769/2009", desc: "Ensino e aprendizagem da Música na Escola básica." },
+      { num: 14, title: "Competências e habilidades PCN-EM", desc: "Competências e habilidades propostas pelos Parâmetros Curriculares Nacionais para Arte." }
+    ]
+  },
+  {
+    id: "biologia",
+    code: 60,
+    name: "Conhecimentos Específicos: Biologia",
+    unit: "Centro de Ciências da Saúde - CCS / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura ou Bacharelado em Ciências Biológicas com Pós-graduação",
+    points: [
+      { num: 1, title: "Identidade dos seres vivos e célula", desc: "Aspectos físicos, químicos e estruturais da célula, organelas celular e eucariontes/procariontes." },
+      { num: 2, title: "Funções celulares e Ciclo celular", desc: "Síntese, transporte, eliminação de substâncias, obtenção de energia (fermentação, fotossíntese e respiração celular) e ciclo celular." },
+      { num: 3, title: "Noções básicas de microscopia", desc: "Fundamentos de microscopia e sua utilização no ensino de biologia." },
+      { num: 4, title: "Origem e evolução da vida", desc: "Hipóteses sobre a origem da vida, teorias de Lamarck e Darwin e evolução humana." },
+      { num: 5, title: "Diversidade da vida", desc: "Características dos representantes de cada domínio e reino, regras de nomenclatura e biodiversidade." },
+      { num: 6, title: "Características anatômicas e fisiológicas humanas", desc: "Fisiologia dos sistemas digestório, respiratório, cardiovascular, urinário, nervoso, endócrino, imunológico, reprodutor e locomotor." },
+      { num: 7, title: "Fundamentos da hereditariedade", desc: "Gene, código genético e cálculos com probabilidade." },
+      { num: 8, title: "Leis de Mendel e Engenharia Genética", desc: "Primeira e segunda leis de Mendel, clonagem e organismos transgênicos." },
+      { num: 9, title: "Interação entre os seres vivos", desc: "Conceitos básicos em ecologia, relações tróficas (cadeias e teias) e ecossistemas do Brasil." },
+      { num: 10, title: "Ensino de Biologia: Abordagens metodológicas", desc: "Conhecimento científico, habilidade didática e construção do conhecimento em Biologia." },
+      { num: 11, title: "Recursos didáticos e Laboratório", desc: "Utilização de materiais em sala e laboratório, técnicas básicas e normas de segurança laboratoriais." },
+      { num: 12, title: "Tecnologia da Informação e Comunicação", desc: "O ensino de Biologia e as novas tecnologias digitais." },
+      { num: 13, title: "Avaliação de aprendizagem em Biologia", desc: "Avaliação de aprendizagem do conhecimento biológico." },
+      { num: 14, title: "Competências e habilidades do PCN-EM", desc: "Competências e habilidades propostas pelos Parâmetros Curriculares Nacionais de Biologia." }
+    ]
+  },
+  {
+    id: "educacao-fisica",
+    code: 22,
+    name: "Conhecimentos Específicos: Educação Física",
+    unit: "Centro de Educação - CED / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Educação Física com Pós-graduação",
+    points: [
+      { num: 1, title: "Histórico da Educação Física", desc: "Evolução histórica da Educação Física no Brasil e no mundo." },
+      { num: 2, title: "Educação Física enquanto linguagem", desc: "O movimento humano como expressão corporal de linguagem." },
+      { num: 3, title: "Processo ensino-aprendizagem na Educação Física", desc: "Abordagens didáticas e metodologias de ensino." },
+      { num: 4, title: "Construindo competências e habilidades", desc: "Competências motoras e atitudinais na escola." },
+      { num: 5, title: "Avaliação em Educação Física", desc: "Critérios de avaliação de aprendizagem corporal e teórica." },
+      { num: 6, title: "Educação Física e sociedade", desc: "Relações entre as práticas corporais e o contexto social." },
+      { num: 7, title: "Fundamentos didático-pedagógicos", desc: "Fundamentação didática das teorias da educação física." },
+      { num: 8, title: "Atividade física e saúde", desc: "Promoção da saúde, qualidade de vida e condicionamento físico." },
+      { num: 9, title: "Crescimento e desenvolvimento", desc: "Fases de crescimento e desenvolvimento físico humano." },
+      { num: 10, title: "Aspectos da aprendizagem motora", desc: "Desenvolvimento e retenção de habilidades psicomotoras." },
+      { num: 11, title: "Aspectos sócio históricos da Educação Física", desc: "História social das práticas corporais e do esporte." },
+      { num: 12, title: "Política educacional e Educação Física", desc: "Leis, diretrizes curriculares e o espaço da disciplina na rede." },
+      { num: 13, title: "Cultura e Educação Física", desc: "O patrimônio cultural dos jogos, ginásticas, lutas e esportes." },
+      { num: 14, title: "Competição e cooperação escolar", desc: "Dinâmica competitiva e cooperativa no cenário escolar." },
+      { num: 15, title: "Competências e habilidades do PCN-EM", desc: "Competências propostas pelos Parâmetros Curriculares Nacionais de Educação Física." }
+    ]
+  },
+  {
+    id: "filosofia",
+    code: 18,
+    name: "Conhecimentos Específicos: Filosofia",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Filosofia com Pós-graduação",
+    points: [
+      { num: 1, title: "A emergência da filosofia grega", desc: "Filosofia, cidade (pólis), democracia, universalização da palavra, verdade e argumentação." },
+      { num: 2, title: "Filosofia e os conhecimentos tradicionais", desc: "Diferença e relações entre narrativas míticas, consciência cotidiana, arte e ciências." },
+      { num: 3, title: "Filosofia e ação: Moral, ética e política", desc: "Moral, ética e política; ética e felicidade em Platão, Aristóteles, Agostinho de Hipona e Spinoza." },
+      { num: 4, title: "Ética, autonomia da razão e dignidade", desc: "O pensamento ético de Immanuel Kant: dever, autonomia e dignidade." },
+      { num: 5, title: "Crítica e genealogia da moral", desc: "O pensamento de Friedrich Nietzsche: crítica aos valores tradicionais." },
+      { num: 6, title: "Filosofia e conhecimento científico", desc: "Racionalismo (Descartes) e empirismo (Bacon), ciência, técnica e crítica da técnica em Heidegger e Benjamin." },
+      { num: 7, title: "Filosofia e experiência estética", desc: "Arte e absoluto (Hegel), afirmação da vida (Nietzsche), sentido (Heidegger, Gadamer) e capitalismo (Benjamin, Adorno, Horkheimer)." },
+      { num: 8, title: "Ensino de Filosofia no Ensino Médio", desc: "Determinações legais, interdisciplinaridade, estratégias didáticas, seleção de conteúdos e PCNs de Filosofia." }
+    ]
+  },
+  {
+    id: "fisica",
+    code: 45,
+    name: "Conhecimentos Específicos: Física",
+    unit: "Centro de Ciências e Tecnologia - CCT / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura ou Bacharelado em Física com Pós-graduação",
+    points: [
+      { num: 1, title: "História e evolução das ideias da Física", desc: "Cosmologia antiga, física de Aristóteles, origens da mecânica, relatividade e quântica." },
+      { num: 2, title: "Mecânica: Cinemática e Dinâmica", desc: "Cinemática escalar e vetorial, movimento circular, leis de Newton e suas aplicações." },
+      { num: 3, title: "Mecânica: Energia, Impulso e Hidrostática", desc: "Trabalho, potência, conservação da energia e da quantidade de movimento, gravitação, estática de sólidos e fluidos (Pascal, Arquimedes, Stevin)." },
+      { num: 4, title: "Termodinâmica: Calor, Temperatura e Fase", desc: "Calor e temperatura, dilatação térmica, calor específico, trocas de calor, mudança de fase e diagramas." },
+      { num: 5, title: "Termodinâmica: Gases e Leis", desc: "Teoria cinética dos gases, transformações, leis da termodinâmica, entropia, entalpia, máquinas térmicas e ciclo de Carnot." },
+      { num: 6, title: "Eletromagnetismo: Eletrostática e Circuitos", desc: "Campo elétrico, Lei de Gauss, potencial elétrico, corrente, resistores, potência e circuitos elétricos." },
+      { num: 7, title: "Eletromagnetismo: Magnetismo e Equações de Maxwell", desc: "Campo magnético, Lei de Ampère, Lei de Faraday, propriedades elétricas/magnéticas e equações de Maxwell." },
+      { num: 8, title: "Ondulatória e MHS", desc: "Movimento harmônico simples, oscilações livres/amortecidas/forçadas, ondas sonoras e eletromagnéticas e ressonância." },
+      { num: 9, title: "Ótica Geométrica e Ótica Física", desc: "Reflexão, refração, instrumentos ópticos, interferência, difração e polarização da luz." },
+      { num: 10, title: "Física Moderna", desc: "Relatividade especial, transformação de Lorentz, equivalência massa-energia, dualidade onda-partícula, teoria quântica, átomo de hidrogênio e núcleo atômico." },
+      { num: 11, title: "Ensino de Física e Competências", desc: "Habilidade didática, abordagens metodológicas, laboratório e segurança, novas tecnologias e PCN-EM de Física." }
+    ]
+  },
+  {
+    id: "geografia",
+    code: 6,
+    name: "Conhecimentos Específicos: Geografia",
+    unit: "Faculdade de Educação do Sertão Central - FECLESC / Quixadá",
+    regime: "40h",
+    requirements: "Licenciatura ou Bacharelado em Geografia com Pós-graduação",
+    points: [
+      { num: 1, title: "Concepções do pensamento geográfico", desc: "Sociedade, lugar, paisagem, currículo, territorialidade, novas abordagens teóricas, tecnologias e avaliação." },
+      { num: 2, title: "Geopolítica e Geografia Econômica", desc: "O espaço como produto do homem, capitalismo, desenvolvimento, subdesenvolvimento, ordem mundial e globalização." },
+      { num: 3, title: "Comércio, Infraestrutura e Agropecuária", desc: "Comércio internacional, MERCOSUL, energia, transporte, agropecuária, comércio, indústria e serviços." },
+      { num: 4, title: "População, Trabalho e Urbanização", desc: "Relações de trabalho, desigualdades sociais, revolução técnico-científica, população, contrastes regionais e metropolização." },
+      { num: 5, title: "Ecologia e Impactos Ambientais", desc: "Ecossistemas naturais, impactos ambientais, recursos naturais, devastação histórica, política ambiental e competências do PCN." }
+    ]
+  },
+  {
+    id: "historia",
+    code: 73,
+    name: "Conhecimentos Específicos: História",
+    unit: "Faculdade de Educação de Crateús - FAEC / Crateús",
+    regime: "40h",
+    requirements: "Licenciatura ou Bacharelado em História com Pós-graduação",
+    points: [
+      { num: 1, title: "Pensamento Histórico e Ensino de História", desc: "Concepções de história, historiografia, memória, oralidade, cotidiano, currículo, diversidade étnico-racial, novas tecnologias e avaliação." },
+      { num: 2, title: "Pré-História e Antiguidade", desc: "Processo de hominização, Pré-história, Egito, Núbia, Kush, Mesopotâmia, Grécia e Roma antiga." },
+      { num: 3, title: "Idade Média, Islã e Reinos Africanos", desc: "Sociedade europeia medieval, Cristianização, Islamismo na Arábia e África e os reinos africanos (séculos V ao XV)." },
+      { num: 4, title: "Idade Moderna, Navegações e Escravidão", desc: "Europa dos séculos XV ao XVIII, civilizações pré-coloniais (Mali, Congo, Zimbabwe), escravidão e tráfico de escravizados." },
+      { num: 5, title: "Brasil e Ceará Colonial", desc: "Organização colonial, escravidão e resistência, tecnologias trazidas pelos escravizados, cultura, religiosidade e independência." },
+      { num: 6, title: "Império Brasileiro e Revoltas Sociais", desc: "Primeiro e Segundo Reinado, participação do Ceará, revoltas sociais (Cabanagem, Balaiada, Farroupilha, etc.), abolição e República." },
+      { num: 7, title: "Brasil e Ceará Republicano", desc: "Organização sócio-política, econômica e cultural do Ceará e Brasil na República, atualidades e movimentos sociais do século XX." },
+      { num: 8, title: "Competências e diretrizes do PCN-EM", desc: "Habilidades e competências pedagógicas recomendadas pelos Parâmetros Curriculares de História." }
+    ]
+  },
+  {
+    id: "libras",
+    code: 12,
+    name: "Conhecimentos Específicos: Libras",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Letras Libras com Pós-graduação",
+    points: [
+      { num: 1, title: "Educação de surdos: história e teorias", desc: "História e teorias educacionais voltadas para la educação de pessoas surdas." },
+      { num: 2, title: "Identidades e cultura surda", desc: "Construção de identidades, comunidade surda e aspectos sócio-culturais." },
+      { num: 3, title: "Políticas educacionais e processos inclusivos", desc: "Marcos legais, processos inclusivos, bilinguismo e acessibilidade escolar." },
+      { num: 4, title: "Fonologia e Língua Brasileira de Sinais", desc: "Parâmetros de configuração de mão, ponto de articulação, movimento e expressões." },
+      { num: 5, title: "Morfologia e Língua Brasileira de Sinais", desc: "Estrutura e formação de sinais na Libras e classificadores." },
+      { num: 6, title: "Sintaxe e Língua Brasileira de Sinais", desc: "Ordem frasal na Libras e concordância utilizando o espaço físico." },
+      { num: 7, title: "Semântica e pragmática na Libras", desc: "Significação semântica dos sinais e pragmática conversacional." },
+      { num: 8, title: "Ensino de Libras como primeira língua", desc: "Fundamentos do ensino de Libras como L1 para a comunidade surda." },
+      { num: 9, title: "Ensino de Libras como segunda língua", desc: "Metodologias do ensino de Libras como L2 para ouvintes." }
+    ]
+  },
+  {
+    id: "espanhol",
+    code: 34,
+    name: "Conhecimentos Específicos: Língua Espanhola",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Letras Espanhol com Pós-graduação",
+    points: [
+      { num: 1, title: "Leitura e compreensão de textos", desc: "Interpretação e leitura crítica considerando os diversos gêneros textuais em espanhol." },
+      { num: 2, title: "Tendências pedagógicas de Espanhol", desc: "Ensino de Língua Espanhola sob novos enfoques metodológicos." },
+      { num: 3, title: "Estratégias de leitura", desc: "Domínio de estratégias como skimming, scanning e prediction, palavras cognatas e falsos cognatos." },
+      { num: 4, title: "Vocabulário básico e interpretativo", desc: "Domínio lexical compatível com as exigências dos textos e do edital." },
+      { num: 5, title: "Morfossintaxe: Fonética e Artigos", desc: "O alfabeto gráfico e oral, artigos definidos e o artigo neutro LO." },
+      { num: 6, title: "Morfossintaxe: Substantivos e Pronomes", desc: "Pronomes pessoais, de tratamento, demonstrativos e interrogativos." },
+      { num: 7, title: "Morfossintaxe: Adjetivos e Numerais", desc: "Adjetivos possessivos, possessivos apocopados e numerais ordinais e cardinais." },
+      { num: 8, title: "Morfossintaxe: Estrutura Verbal", desc: "Presente do indicativo de verbos essenciais, perífrasis de futuro, advérbios e conjugação." },
+      { num: 9, title: "Divergências léxicas e Apócope", desc: "Estudo de heterosemánticos (falsos amigos), heterotónicos, heterogenéricos e fenômeno da apócope." },
+      { num: 10, title: "Língua, cultura e sociedade", desc: "Integração linguístico-cultural do mundo hispânico contemporâneo." },
+      { num: 11, title: "Produção escrita processual", desc: "O tratamento da escrita como processo composto de revisão, correção e reescrita." },
+      { num: 12, title: "Avaliação e Diretrizes do PCN-EM", desc: "Avaliação na educação básica, compreensão literária e competências propostas pelo PCN." }
+    ]
+  },
+  {
+    id: "ingles",
+    code: 35,
+    name: "Conhecimentos Específicos: Língua Inglesa",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Letras Inglês com Pós-graduação",
+    points: [
+      { num: 1, title: "Reading and Comprehension Strategies", desc: "Leitura de diversos gêneros textuais, skimming, scanning, prediction, cognatos e falsos cognatos." },
+      { num: 2, title: "Grammar: Present and Past Tenses", desc: "Verb to be, simple present/past, regular and irregular verbs, present and past continuous." },
+      { num: 3, title: "Grammar: Perfect and Future Tenses", desc: "Present and past perfect, present perfect continuous, future (will e going to) nas diversas formas." },
+      { num: 4, title: "Grammar: Modals, Passive Voice and Prepositions", desc: "Imperative, modal verbs, passive voice, uso de preposições, conjunções e formação de palavras." },
+      { num: 5, title: "Grammar: Pronouns and Comparatives", desc: "Personal/possessive pronouns, possessive adjectives, relative clauses, comparatives, superlatives e possessive case." },
+      { num: 6, title: "Culture, Writing Process and Literature", desc: "Língua, cultura e sociedade; produção escrita (revisão e reescrita) e leitura de autores modernos/contemporâneos." },
+      { num: 7, title: "Didactics, Evaluation and PCN", desc: "Avaliação no ensino de inglês na educação básica e competências e habilidades recomendadas pelos PCN-EM." }
+    ]
+  },
+  {
+    id: "portugues",
+    code: 42,
+    name: "Conhecimentos Específicos: Língua Portuguesa",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Letras Português com Pós-graduação",
+    points: [
+      { num: 1, title: "Teoria Literária e Escolas do Barroco ao Romantismo", desc: "Elementos de teoria literária, Barroco no Brasil (Gregório de Matos), Arcadismo (Inconfidência, transição romântica) e Romantismo ( costumes burgueses e perfis)." },
+      { num: 2, title: "Escolas do Realismo ao Simbolismo", desc: "Análise de textos realistas-naturalistas, estética e temas do Parnasianismo e transcendência do Simbolismo (Cruz e Souza, Alphonsus)." },
+      { num: 3, title: "Pré-Modernismo, Modernismo e Tendências Contemporâneas", desc: "Pré-Modernismo, Vanguardas Europeias, três gerações modernistas brasileiras, pós-modernismo e influências étnicas (afro-brasileira e indígena)." },
+      { num: 4, title: "Leitura: Coerência e Coesão Textual", desc: "Compreensão literal, relações de coerência (causa, efeito, comparação), coesão (referência, substituição, elipse, repetição) e indícios contextuais." },
+      { num: 5, title: "Semântica, Retórica e Compreensão Crítica", desc: "Relações de sentido (sinonímia, hiperonímia, campo semântico), fato versus opinião, organização retórica (generalização, classificação) e inferências." },
+      { num: 6, title: "Análise Linguística: Sintaxe da Frase e do Período", desc: "Recursos estilísticos, coerência e coesão, modos de construção de orações e valor semântico-sintático das palavras." },
+      { num: 7, title: "Concordância, Regência e Colocação pronominal", desc: "Concordância nominal/verbal, regência e colocação como moduladores de sentido e intenção do texto." },
+      { num: 8, title: "Variação Linguística, Gêneros e Tecnologias", desc: "Níveis de variação e preconceito linguístico, função social dos gêneros, hipertexto, linguagem virtual, semiótica e competências dos PCN." }
+    ]
+  },
+  {
+    id: "quimica",
+    code: 50,
+    name: "Conhecimentos Específicos: Química",
+    unit: "Centro de Ciências e Tecnologia - CCT / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura ou Bacharelado em Química com Pós-graduação",
+    points: [
+      { num: 1, title: "História da Química e Estequiometria", desc: "Alquimia, nascimento da química moderna, leis ponderais (Lavoisier, Proust, Dalton, Richter), leis gasosas (Gay-Lussac), Avogadro, mols e estequiometria." },
+      { num: 2, title: "Ligações Químicas e Geometria Molecular", desc: "Ligações iônica e covalente, eletronegatividade, repulsão de pares eletrônicos (VSEPR), hibridização, orbitais híbridos e moleculares." },
+      { num: 3, title: "Estados da Matéria e Soluções", desc: "Sólidos, líquidos e gases (reais e ideais), forças intermoleculares, mudanças de estado, diagramas de fase, misturas, solubilidade e propriedades coligativas." },
+      { num: 4, title: "Estrutura Atômica e Tabela Periódica", desc: "Evolução dos modelos atômicos, propriedades periódicas (tamanho, eletronegatividade, afinidade) e histórico da classificação periódica." },
+      { num: 5, title: "Funções Inorgânicas e Equilíbrio em Solução", desc: "Ácidos, bases, sais, óxidos, reações em solução, dissociação, hidrólise, indicadores de pH, titulação e soluções tampão." },
+      { num: 6, title: "Cinética e Equilíbrio Químico", desc: "Velocidades e mecanismos de reação, equação de velocidade, teoria de colisões, complexo ativado e catálise." },
+      { num: 7, title: "Fundamentos de Química Orgânica", desc: "Nomenclatura orgânica oficial, funções orgânicas, reações e mecanismos de reação orgânica." },
+      { num: 8, title: "Ensino de Química e Metodologia", desc: "Habilidade didática, abordagens metodológicas, segurança de laboratório, novas tecnologias de comunicação, avaliação e competências do PCN." }
+    ]
+  },
+  {
+    id: "sociologia",
+    code: 14,
+    name: "Conhecimentos Específicos: Sociologia",
+    unit: "Centro de Humanidades - CH / Fortaleza",
+    regime: "40h",
+    requirements: "Licenciatura em Ciências Sociais ou Sociologia com Pós-graduação",
+    points: [
+      { num: 1, title: "Surgimento da Sociologia e Socialização", desc: "Contexto histórico da Sociologia como ciência, condicionamentos sócio-culturais da personalidade, subjetividade e objetividade." },
+      { num: 2, title: "Estrutura Social e Instituições", desc: "Estrutura da sociedade, as instituições sociais (família, religião, Estado) e processos de socialização." },
+      { num: 3, title: "Pensamento Sociológico Clássico", desc: "Conceitos básicos das teorias de Émile Durkheim, Karl Marx e Max Weber; classes sociais, estratificação e desigualdade." },
+      { num: 4, title: "Problemas Sociais Contemporâneos e Exclusão", desc: "Desigualdades sociais, exclusão, violência na juventude/escola, preconceito, discriminação, e movimentos sociais clássicos e novos." },
+      { num: 5, title: "Gênero, Envelhecimento, Consumo e Mídia", desc: "Identidade de gênero, violência, cultura de consumo, envelhecimento, influência ideológica dos meios de comunicação e migrações." },
+      { num: 6, title: "Trabalho, Emprego e Sindicalismo", desc: "Relações sociais de produção, transformações contemporâneas do trabalho e novo mundo do trabalho." },
+      { num: 7, title: "Globalização, Meio Ambiente e Identidade", desc: "Impacto ambiental do avanço tecnológico, globalização econômica e Estados nacionais, ética, cidadania, sociologia no Brasil e no Nordeste." },
+      { num: 8, title: "Metodologia de Ensino de Sociologia", desc: "Estratégias pedagógicas, transposição didática de ciências sociais e seleção de conteúdos no Ensino Médio." }
+    ]
+  }
+];
+
 export default function SyllabusModule({ profile, onChangeModule, onTopicClick }: SyllabusModuleProps) {
   // Tabs: 'syllabus' (Guia do Conteúdo), 'simulator' (Sorteador de Pontos), 'calculator' (Calculadora de Notas), 'salaries' (Remuneração & Vagas)
   const [activeTab, setActiveTab] = useState<string>("syllabus");
@@ -131,6 +417,57 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
   const [syllabusView, setSyllabusView] = useState<"geral" | "especifico">("geral");
   const [selectedGenCatId, setSelectedGenCatId] = useState<string>("pedagogicos");
   const [selectedGenTopicKey, setSelectedGenTopicKey] = useState<string>("História do pensamento pedagógico brasileiro, teoria da educação e correntes pedagógicas");
+
+  const visibleSectors = React.useMemo(() => {
+    if (!profile.discipline) return sectors;
+    const disciplineLower = profile.discipline.toLowerCase().trim();
+    
+    return sectors.filter(sec => {
+      if (disciplineLower === "biologia") {
+        return sec.id === "biologia";
+      }
+      if (disciplineLower === "história" || disciplineLower === "historia") {
+        return sec.id === "historia";
+      }
+      if (disciplineLower === "língua portuguesa" || disciplineLower === "lingua portuguesa" || disciplineLower === "português" || disciplineLower === "portugues") {
+        return sec.id === "portugues";
+      }
+      if (disciplineLower === "matemática" || disciplineLower === "matematica") {
+        return sec.id === "matematica";
+      }
+      if (disciplineLower === "sociologia") {
+        return sec.id === "sociologia";
+      }
+      if (disciplineLower === "geografia") {
+        return sec.id === "geografia";
+      }
+      if (disciplineLower === "arte-educação" || disciplineLower === "arte educaçao" || disciplineLower === "arte-educacao" || disciplineLower === "arte" || disciplineLower === "artes") {
+        return sec.id === "arte-educacao";
+      }
+      if (disciplineLower === "educação física" || disciplineLower === "educacao fisica") {
+        return sec.id === "educacao-fisica";
+      }
+      if (disciplineLower === "filosofia") {
+        return sec.id === "filosofia";
+      }
+      if (disciplineLower === "física" || disciplineLower === "fisica") {
+        return sec.id === "fisica";
+      }
+      if (disciplineLower === "química" || disciplineLower === "quimica") {
+        return sec.id === "quimica";
+      }
+      if (disciplineLower === "língua espanhola" || disciplineLower === "lingua espanhola" || disciplineLower === "espanhol") {
+        return sec.id === "espanhol";
+      }
+      if (disciplineLower === "língua inglesa" || disciplineLower === "lingua inglesa" || disciplineLower === "inglês" || disciplineLower === "ingles") {
+        return sec.id === "ingles";
+      }
+      if (disciplineLower === "libras") {
+        return sec.id === "libras";
+      }
+      return true;
+    });
+  }, [profile.discipline]);
 
   // Local storage state for general subtopics status
   const [genSubtopicStatus, setGenSubtopicStatus] = useState<Record<string, boolean>>(() => {
@@ -224,7 +561,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
   const getAllSectorsStats = () => {
     let totalCompleted = 0;
     let totalGoalsAll = 0;
-    const details = sectors.map(sec => {
+    const details = visibleSectors.map(sec => {
       const stats = getSectorStats(sec);
       totalCompleted += stats.completedGoals;
       totalGoalsAll += stats.totalGoals;
@@ -242,18 +579,37 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
   };
 
   React.useEffect(() => {
-    if (profile.discipline === "Biologia") {
+    const disciplineLower = (profile.discipline || "").toLowerCase().trim();
+    if (disciplineLower === "biologia") {
       setSelectedSectorId("biologia");
-    } else if (profile.discipline === "História") {
-      setSelectedSectorId("historia_brasil");
-    } else if (profile.discipline === "Língua Portuguesa") {
-      setSelectedSectorId("linguistica");
-    } else if (profile.discipline === "Matemática") {
+    } else if (disciplineLower === "história" || disciplineLower === "historia") {
+      setSelectedSectorId("historia");
+    } else if (disciplineLower === "língua portuguesa" || disciplineLower === "lingua portuguesa" || disciplineLower === "português" || disciplineLower === "portugues") {
+      setSelectedSectorId("portugues");
+    } else if (disciplineLower === "matemática" || disciplineLower === "matematica") {
       setSelectedSectorId("matematica");
-    } else if (profile.discipline === "Sociologia") {
+    } else if (disciplineLower === "sociologia") {
       setSelectedSectorId("sociologia");
-    } else if (profile.discipline === "Geografia") {
+    } else if (disciplineLower === "geografia") {
       setSelectedSectorId("geografia");
+    } else if (disciplineLower === "arte-educação" || disciplineLower === "arte-educao" || disciplineLower === "arte" || disciplineLower === "artes") {
+      setSelectedSectorId("arte-educacao");
+    } else if (disciplineLower === "educação física" || disciplineLower === "educacao fisica") {
+      setSelectedSectorId("educacao-fisica");
+    } else if (disciplineLower === "filosofia") {
+      setSelectedSectorId("filosofia");
+    } else if (disciplineLower === "física" || disciplineLower === "fisica") {
+      setSelectedSectorId("fisica");
+    } else if (disciplineLower === "química" || disciplineLower === "quimica") {
+      setSelectedSectorId("quimica");
+    } else if (disciplineLower === "língua espanhola" || disciplineLower === "lingua espanhola" || disciplineLower === "espanhol") {
+      setSelectedSectorId("espanhol");
+    } else if (disciplineLower === "língua inglesa" || disciplineLower === "lingua inglesa" || disciplineLower === "ingles") {
+      setSelectedSectorId("ingles");
+    } else if (disciplineLower === "libras") {
+      setSelectedSectorId("libras");
+    } else {
+      setSelectedSectorId("matematica");
     }
   }, [profile.discipline]);
 
@@ -273,211 +629,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
   const [didacticTimePenalty, setDidacticTimePenalty] = useState<number>(0); // penalty in points
   const [lessonDurationMinutes, setLessonLessonDurationMinutes] = useState<number>(52); // default 52 mins
 
-  // FUNECE Sectors mapped directly from the official PDF
-  const sectors: Sector[] = [
-    {
-      id: "matematica",
-      code: 29,
-      name: "Matemática Aplicada",
-      unit: "Centro de Ciências e Tecnologia - CCT / Fortaleza",
-      regime: "40h",
-      requirements: "Graduação em Matemática ou áreas afins com Pós-graduação",
-      points: [
-        { num: 1, title: "Matrizes e Determinantes", desc: "Propriedades, cálculo de determinantes de ordens superiores, inversão de matrizes e aplicações em sistemas." },
-        { num: 2, title: "Sistemas Lineares", desc: "Discussão e resolução de sistemas lineares, teorema de Rouché-Capelli, métodos iterativos e diretos." },
-        { num: 3, title: "Modelagem com EDOs de Primeira Ordem", desc: "Formulação de modelos de crescimento populacional, decaimento radioativo, misturas e resfriamento de Newton." },
-        { num: 4, title: "Equações Autônomas e Dinâmica Populacional", desc: "Pontos de equilíbrio, estabilidade linear, diagramas de fase, equações logísticas e modelos de bifurcação." },
-        { num: 5, title: "Equações Exatas e Fatores Integrantes", desc: "Condição de exatidão, determinação de fatores integrantes para redução de equações diferenciais não exatas." },
-        { num: 6, title: "Aproximações Numéricas: O Método de Euler", desc: "Algoritmos para aproximação de soluções de EDOs, análise de erro local e global, refinamento de malha." },
-        { num: 7, title: "Teorema Fundamental do Cálculo e Aplicações", desc: "Demonstração, interpretação física e geométrica, cálculo de áreas, comprimento de arco e volumes de revolução." },
-        { num: 8, title: "Polinômio de Taylor e Aplicações", desc: "Séries de potências, expansão de Taylor e Maclaurin, estimativa de resto de Lagrange e aproximações de funções." },
-        { num: 9, title: "Espaços de Probabilidade", desc: "Definição axiomática de Kolmogorov, álgebra de eventos, espaço amostral e medidas de probabilidade." },
-        { num: 10, title: "Probabilidade Condicional", desc: "Teorema de Bayes, probabilidade total, independência de eventos e aplicações em testes diagnósticos." }
-      ]
-    },
-    {
-      id: "planejamento",
-      code: 31,
-      name: "Planejamento e Avaliação Educacional",
-      unit: "Centro de Educação - CED / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura em Pedagogia com Pós-Graduação na área",
-      points: [
-        { num: 1, title: "Agenda globalmente estruturada da educação: o lugar do planejamento e da avaliação", desc: "Análise histórica e sociológica das influências de agências multilaterais nas reformas educativas." },
-        { num: 2, title: "Os organismos internacionais e as influências para a construção do estado avaliador", desc: "O papel do Banco Mundial, OCDE e UNESCO nas políticas de avaliação em larga escala na América Latina." },
-        { num: 3, title: "Plano Nacional de Educação: construção e desconstrução de uma política pública nacional", desc: "Metas e diretrizes do PNE vigente, financiamento da educação básica e o federalismo cooperativo." },
-        { num: 4, title: "Avaliar para gerir: avaliação, gestão e financiamento da educação no modelo gerencial", desc: "A lógica da eficiência, accountability educacional e bonificação por resultados na rede pública estadual." },
-        { num: 5, title: "O planejamento educacional e a construção do currículo inclusivo e multicultural", desc: "Desafios da diversidade, relações étnico-raciais, gênero e sexualidade no planejamento pedagógico." },
-        { num: 6, title: "Avaliação Educacional e a construção das subjetividades docentes: riscos e fragmentações", desc: "O impacto da pressão por resultados no adoecimento docente e na fragmentação do trabalho escolar." },
-        { num: 7, title: "Planejar a educação, a escola e a sala de aula: embate entre PPP e projetos empresariais", desc: "Análise crítica dos materiais de ensino padronizados e a resistência pela autonomia pedagógica no PPP." },
-        { num: 8, title: "Avaliação institucional: histórico, perspectivas, procedimentos e instrumentos", desc: "Autoavaliação de escolas de educação básica e avaliação externa: tensões, interfaces e complementaridade." },
-        { num: 9, title: "Responsabilização (accountability) na gestão da educação, premiação e ranqueamento", desc: "Como a disputa por posições no IDEB/SPAECE altera a didática e a prática pedagógica cotidiana." },
-        { num: 10, title: "Planejamento e avaliação educacional em plataformas virtuais e ensino híbrido", desc: "Tecnologias educacionais, ensino mediado por plataformas, personalização do ensino e novas formas de exclusão digital." }
-      ]
-    },
-    {
-      id: "ens_matematica",
-      code: 32,
-      name: "Ensino de Matemática",
-      unit: "Centro de Educação - CED / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura em Pedagogia",
-      points: [
-        { num: 1, title: "Importância da história da matemática no ensino de matemática na educação infantil e anos iniciais", desc: "A evolução histórica dos números, sistemas de numeração antigos e sua transposição didática." },
-        { num: 2, title: "Contribuições das tecnologias digitais e da ludicidade para o ensino-aprendizagem", desc: "Uso de softwares de geometria dinâmica, jogos de tabuleiro e resolução lúdica nos anos iniciais." },
-        { num: 3, title: "Campo aditivo e multiplicativo e a resolução de problemas", desc: "Estruturas conceituais de Gerard Vergnaud. Problemas de partição, proporção e combinação no Fundamental I." },
-        { num: 4, title: "Letramento matemático na educação infantil, anos iniciais e EJA", desc: "Definição de letramento matemático segundo a OCDE/PISA e sua aplicação no cotidiano do aluno trabalhador." },
-        { num: 5, title: "A legislação educacional vigente, investigações matemáticas e raciocínio matemático", desc: "Práticas de investigação que promovem a conjectura, generalização e demonstração informal de padrões matemáticas." },
-        { num: 6, title: "Etnomatemática; modelagem matemática e resolução de problemas na infância e EJA", desc: "A matemática de grupos culturais específicos (Ubiratan D'Ambrosio) e a modelagem de problemas reais locais." },
-        { num: 7, title: "Educação especial e inclusiva em matemática", desc: "Adaptação de materiais manipulativos, Soroban, Geoplano para alunos com deficiência visual e estratégias para discalculia." },
-        { num: 8, title: "Avaliação da aprendizagem em matemática: tendências contemporâneas", desc: "Avaliação formativa, análise de erros (Cury) como ferramenta pedagógica e portfólios em matemática." },
-        { num: 9, title: "A elaboração dos conceitos matemáticos e as diferentes representações semióticas", desc: "Teoria dos Registros de Representação Semiótica de Raymond Duval (representação gráfica, algébrica, numérica e verbal)." },
-        { num: 10, title: "A percepção de regularidades e de padrões e o desenvolvimento do pensamento algébrico", desc: "A transição do pensamento aritmético para o algébrico por meio de sequências visuais e regularidades numéricas." }
-      ]
-    },
-    {
-      id: "formacao_docente",
-      code: 33,
-      name: "Formação Docente e Identidade do Professor",
-      unit: "Centro de Educação - CED / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura em Pedagogia com Especialização ou Mestrado",
-      points: [
-        { num: 1, title: "Curso de Pedagogia no Brasil: a trajetória histórica e as políticas de formação", desc: "Evolução do curso desde o esquema '3+1' da década de 1930 até as diretrizes curriculares nacionais atuais." },
-        { num: 2, title: "A docência como eixo fundamental da formação do pedagogo e a escola como lócus principal", desc: "O papel do pedagogo na articulação do PPP escolar e na liderança da formação continuada em serviço." },
-        { num: 3, title: "A docência como atividade profissional: saberes docentes, profissionalização e profissionalidade", desc: "Estudo dos saberes da ação, da experiência e disciplinares descritos por Tardif, Gauthier e Shulman." },
-        { num: 4, title: "O debate sobre a identidade do pedagogo no Brasil: entre o técnico e o docente", desc: "Análise da dualidade histórica entre o especialista técnico de supervisão e o pedagogo docente." },
-        { num: 5, title: "O professor pesquisador e reflexivo e a prática investigativa de formação", desc: "Donald Schön e a epistemologia da prática (reflexão-na-ação, reflexão-sobre-a-ação, reflexão-sobre-a-reflexão-na-ação)." },
-        { num: 6, title: "O compromisso social do pedagogo: entre a acomodação e a transformação social", desc: "A função social do educador sob a ótica da pedagogia libertadora de Paulo Freire e do compromisso político de Saviani." },
-        { num: 7, title: "A Pedagogia não-escolar e as diversas áreas de atuação", desc: "Pedagogia hospitalar, empresarial, social e atuação em ONGs: limites e possibilidades diante das resoluções federais." },
-        { num: 8, title: "As emoções, a identidade docente e as histórias de vida dos professores", desc: "Abordagens biográficas e narrativas (Nóvoa) como método de formação e autocompreensão da identidade profissional." },
-        { num: 9, title: "A constituição da identidade docente: formação, saberes e práticas profissionais", desc: "O processo de socialização profissional, o choque de realidade no início da carreira e fases do ciclo de vida docente (Huberman)." },
-        { num: 10, title: "A inter-relação da formação docente com a gestão pedagógica da sala de aula", desc: "Relação professor-aluno, indisciplina, clima de sala de aula e a transposição didática como elementos de gestão." }
-      ]
-    },
-    {
-      id: "linguistica",
-      code: 42,
-      name: "Linguística e Língua Portuguesa",
-      unit: "Centro de Humanidades - CH / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura em Letras Português com Pós-graduação",
-      points: [
-        { num: 1, title: "Teoria e análise linguística de orientação estruturalista", desc: "Ferdinand de Saussure: dicotomias língua/fala, significante/significado, sincrônico/diacrônico, sintagmático/paradigmático." },
-        { num: 2, title: "Teoria e análise linguística de orientação gerativista", desc: "Noam Chomsky: faculdade da linguagem, gramática universal, competência e desempenho, inatismo linguístico." },
-        { num: 3, title: "Semântica e Pragmática", desc: "Relações de sentido no léxico; atos de fala (Austin e Searle), princípio de cooperação de Grice, implicaturas conversacionais." },
-        { num: 4, title: "Descrição fonética e fonológica das línguas naturais", desc: "Sons da fala (ponto e modo de articulação, sonoridade) e fonemas (traços distintivos, oposições fonológicas, processos fonológicos)." },
-        { num: 5, title: "Morfossintaxe: processos de descrição e análise morfossintática do vocabulário", desc: "Estrutura e formação de palavras em português. Classes de palavras sob critérios morfológicos, sintáticos e semânticos." },
-        { num: 6, title: "Sociolinguística: o tratamento da variação linguística", desc: "Teoria da variação linguística de Labov: variação estilística, social, geográfica e variação em progresso versus mudança." },
-        { num: 7, title: "Psicolinguística: aquisição e desenvolvimento da linguagem", desc: "Hipóteses sobre a aquisição da linguagem (behaviorismo, cognitivismo construtivista, inatismo e interacionismo social)." },
-        { num: 8, title: "Linguística textual: estratégias de textualização", desc: "Mecanismos de coesão referencial e sequencial (Koch, Marcuschi). Fatores de coerência textual." },
-        { num: 9, title: "Gêneros discursivos: concepções teóricas e metodológicas", desc: "Bakhtin e os gêneros discursivos: enunciado, esferas de atividade humana, conteúdo temático, estilo e construção composicional." },
-        { num: 10, title: "Análise do discurso: fundamentos e conceitos", desc: "Escola francesa (Pêcheux, Orlandi) versus linha anglo-saxã: sujeito, ideologia, interdiscurso, memória discursiva e condições de produção." }
-      ]
-    },
-    {
-      id: "literatura",
-      code: 43,
-      name: "Literatura e Língua Portuguesa",
-      unit: "Centro de Humanidades - CH / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura em Letras Português com Pós-graduação",
-      points: [
-        { num: 1, title: "O tema do desconcerto do mundo na poesia de Carlos Drummond de Andrade", desc: "O sentimento do mundo, o indivíduo 'gauche', a lírica social e a metafísica drummondiana nas diversas fases de sua obra." },
-        { num: 2, title: "Literatura e sociedade na poesia de João Cabral de Melo Neto", desc: "A engenharia do verso cabralina, o regionalismo rigoroso de 'Morte e Vida Severina' e o contraste entre a secura e o lirismo." },
-        { num: 3, title: "As interações entre amor e dinheiro em 'Quincas Borba', de Machado de Assis", desc: "O Humanitismo de Quincas Borba, o cinismo social do Segundo Reinado brasileiro e a ironia realista machadiana." },
-        { num: 4, title: "Autoritarismo e violência em 'Triste fim de Policarpo Quaresma', de Lima Barreto", desc: "Ufanismo patriótico na República da Espada, sátira ao militarismo florianista e a denúncia da desigualdade e racismo." },
-        { num: 5, title: "As relações sociais e econômicas em 'São Bernardo', de Graciliano Ramos", desc: "A reificação do sujeito (Paulo Honório), o latifúndio e a degradação humana decorrente da lógica de acumulação de capital." },
-        { num: 6, title: "A representação social nos contos de Mário de Andrade", desc: "Análise da São Paulo modernista em 'Pauliceia Desvairada' e o lirismo tragicômico de contos como 'Contos de Belazarte'." },
-        { num: 7, title: "O trágico na obra teatral de Nelson Rodrigues", desc: "Teatro desagradável: obsessões humanas, adultério, tragédia familiar no subúrbio carioca e estruturas míticas subjacentes." },
-        { num: 8, title: "História e mito em 'Mensagem', de Fernando Pessoa", desc: "O sebastianismo português, o Quinto Império, o herói mítico e a estrutura tripartida do livro (Brasão, Mar Português, O Encoberto)." },
-        { num: 9, title: "Construção e desconstrução do sentido em 'Os passos em volta', Herberto Helder", desc: "A prosa poética herbertiana, a fragmentação do eu, o hermetismo e as relações intertextuais com a tradição mística." },
-        { num: 10, title: "A releitura da História em 'Memorial do convento', de José Saramago", desc: "A construção de Mafra, a voz dos marginalizados (Baltasar e Blimunda) em oposição ao absolutismo colonial de D. João V." }
-      ]
-    },
-    {
-      id: "historia_brasil",
-      code: 73,
-      name: "História do Brasil",
-      unit: "Faculdade de Educação de Crateús - FAEC / Crateús",
-      regime: "40h",
-      requirements: "Licenciatura ou Bacharelado em História com Pós-graduação",
-      points: [
-        { num: 1, title: "Sociedade, cultura e resistência dos povos originários do Brasil", desc: "Ocupação humana ancestral, diversidade linguística pré-cabralina e mecanismos de resistência à colonização europeia." },
-        { num: 2, title: "A diáspora dos povos africanos e o Brasil", desc: "Tráfico transatlântico de escravizados, conexões culturais afro-brasileiras, resistência, irmandades negras e quilombos." },
-        { num: 3, title: "Revoltas e resistências na América Portuguesa", desc: "Revoltas nativistas (Beckman, Mascates, Vila Rica) e movimentos emancipacionistas (Inconfidência Mineira e Conjuração Baiana)." },
-        { num: 4, title: "Independência e a formação do Estado nacional brasileiro", desc: "Cenário da corte de D. João VI em 1808, o processo de 1822, disputas regionais e a centralização imperial na Constituição de 1824." },
-        { num: 5, title: "Abolicionismo e as lutas dos escravos no século XIX", desc: "A resistência no cativeiro, rotas de fuga, o papel da imprensa e intelectuais abolicionistas (Luiz Gama, Patrocínio) e a abolição no Ceará em 1884." },
-        { num: 6, title: "A construção da identidade nacional e as políticas patrimoniais", desc: "Construção da narrativa histórica pelo IHGB, o papel do modernismo, criação do SPHAN no governo Vargas e o patrimônio contemporâneo." },
-        { num: 7, title: "Populismo e trabalhismo na história e na historiografia", desc: "As leis trabalhistas de Getúlio Vargas, o debate conceitual sobre o termo 'populismo' no Brasil e a mobilização sindical pré-1964." },
-        { num: 8, title: "Da experiência democrática aos militares na política", desc: "A República de 1946 (Dutra, Vargas, JK, Jânio, Jango), as reformas de base e o golpe civil-militar de 1964." },
-        { num: 9, title: "Os movimentos populares na década de 1980", desc: "Greves no ABC paulista, o surgimento do novo sindicalismo, movimento pelas Diretas Já, Assembleia Constituinte de 1987-1988." },
-        { num: 10, title: "Da ascensão do projeto democrático popular ao Impeachment de 2016", desc: "Governos de esquerda e de coalizão no século XXI, políticas sociais, pressões macroeconômicas, protestos de 2013 e a crise político-institucional de 2016." }
-      ]
-    },
-    {
-      id: "biologia",
-      code: 60,
-      name: "Ciências Biológicas e Biologia",
-      unit: "Centro de Ciências da Saúde - CCS / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura ou Bacharelado em Ciências Biológicas com Pós-graduação",
-      points: [
-        { num: 1, title: "Citologia e Organelas Celulares", desc: "Estrutura e fisiologia celular: organelas, bioenergética celular (respiração, fermentação e fotossíntese)." },
-        { num: 2, title: "Genética e Teoria Evolutiva", desc: "Leis de Mendel, ligação gênica, genética de populações, seleção natural e mecanismos de especiação." },
-        { num: 3, title: "Fisiologia Humana Comparada", desc: "Homeostase, sistemas circulatório, respiratório, digestório, excretor e controle endócrino e nervoso." },
-        { num: 4, title: "Histologia e Fisiologia Vegetal", desc: "Tecidos vegetais, absorção e condução de seivas, hormônios vegetais e fotoperiodismo em angiospermas." },
-        { num: 5, title: "Diversidade e Filogenia de Invertebrados e Vertebrados", desc: "Evolução animal: planos corporais, aquisições evolutivas e transição para o meio terrestre." },
-        { num: 6, title: "Ecologia de Populações e Relações Ecológicas", desc: "Dinâmica populacional, sucessão ecológica, cadeias tróficas e fluxo de energia e matéria nos ecossistemas." },
-        { num: 7, title: "Biomas Brasileiros e a Caatinga", desc: "Morfoclimatologia dos biomas nacionais: biodiversidade, adaptações xéricas e conservação da Caatinga." },
-        { num: 8, title: "Biotecnologia e Biologia Molecular", desc: "Estrutura e replicação de ácidos nucleicos, dogma central da biologia, clonagem, transgenia e terapia gênica." },
-        { num: 9, title: "Microbiologia, Virologia e Imunologia", desc: "Vírus e bactérias: taxonomia, ciclos replicativos, imunidade humoral e celular, vacinas e soroterapia." },
-        { num: 10, title: "Práticas e Metodologia no Ensino de Biologia", desc: "Experimentação investigativa, alfabetização científica, transposição didática e ferramentas tecnológicas no ensino básico." }
-      ]
-    },
-    {
-      id: "sociologia",
-      code: 14,
-      name: "Sociologia e Ciências Sociais",
-      unit: "Centro de Humanidades - CH / Fortaleza",
-      regime: "40h",
-      requirements: "Licenciatura ou Bacharelado em Ciências Sociais / Sociologia com Pós-graduação",
-      points: [
-        { num: 1, title: "O Surgimento da Sociologia e a Modernidade", desc: "Racionalismo, empirismo, iluminismo, revoluções burguesas, revolução industrial e a constituição das Ciências Sociais." },
-        { num: 2, title: "Teorias Clássicas: Karl Marx e a Crítica da Economia Política", desc: "Materialismo histórico dialético, luta de classes, mais-valia, alienação, fetiche da mercadoria e ideologia." },
-        { num: 3, title: "Teorias Clássicas: Émile Durkheim e o Método Sociológico", desc: "Fatos sociais, solidariedade mecânica e orgânica, anomia, divisão social do trabalho e análise das taxas de suicídio." },
-        { num: 4, title: "Teorias Clássicas: Max Weber e a Sociologia Compreensiva", desc: "Ação social, tipos ideais, ética protestante e o espírito do capitalismo, dominação legítima, burocracia e desencantamento do mundo." },
-        { num: 5, title: "Pensamento Social Brasileiro", desc: "Formação da sociedade brasileira, miscigenação, relações raciais, escravismo e patrimonialismo nas visões de Gilberto Freyre, Caio Prado Júnior e Florestan Fernandes." },
-        { num: 6, title: "Cultura, Ideologia e Hegemonia", desc: "Conceitos de cultura, indústria cultural e semicultura na Escola de Frankfurt; ideologia e hegemonia em Antonio Gramsci; aparelhos ideológicos de Estado em Althusser." },
-        { num: 7, title: "Estrutura Social, Estratificação e Desigualdade", desc: "Classes sociais e formas contemporâneas de desigualdade e estratificação; gênero, raça, sexualidade, interseccionalidade e habitus de Pierre Bourdieu." },
-        { num: 8, title: "Trabalho, Consumo e Globalização", desc: "Processo de trabalho na modernidade: Taylorismo, Fordismo e Toyotismo. Globalização, flexibilização do mercado, desemprego estrutural e precarização do trabalho." },
-        { num: 9, title: "Estado, Poder, Cidadania e Movimentos Sociais", desc: "Conceitos de poder e autoridade; teorias sobre o Estado; evolução dos direitos civis, políticos e sociais; dinâmica dos movimentos sociais clássicos e contemporâneos." },
-        { num: 10, title: "Metodologias e Epistemologia no Ensino de Sociologia", desc: "Métodos quantitativos e qualitativos de pesquisa sociológica; a transposição didática da Sociologia na Educação Básica e diretrizes curriculares nacionais." }
-      ]
-    },
-    {
-      id: "geografia",
-      code: 6,
-      name: "Geografia e Geociências",
-      unit: "Faculdade de Educação, Ciências e Letras do Sertão Central - FECLESC / Quixadá",
-      regime: "40h",
-      requirements: "Licenciatura ou Bacharelado em Geografia com Pós-graduação",
-      points: [
-        { num: 1, title: "Epistemologia e Conceitos-Chave da Geografia", desc: "Estudo dos conceitos de Espaço, Lugar, Território, Paisagem e Região; evolução do pensamento geográfico e transposição didática escolar." },
-        { num: 2, title: "Geografia Física, Geomorfologia e Dinâmicas do Relevo", desc: "Estrutura geológica, tectônica de placas, agentes endógenos/exógenos, solos e a caracterização do relevo cearense." },
-        { num: 3, title: "Climatologia e Domínios Morfoclimáticos", desc: "Dinâmica atmosférica, circulação global, elementos do clima, domínios morfoclimáticos do Brasil e a semiaridez no Nordeste." },
-        { num: 4, title: "Hidrografia e Bacias Hidrográficas do Ceará", desc: "Ciclo hidrológico, águas superficiais/subterrâneas, principais bacias e a gestão integrada dos recursos hídricos cearenses." },
-        { num: 5, title: "Geografia Agrária e Agronegócio", desc: "Estrutura fundiária brasileira, relações de produção no campo, modernização da agricultura e os impactos do agronegócio." },
-        { num: 6, title: "Geografia Urbana, Metropolização e Cidades", desc: "Processo de urbanização, rede urbana nacional, segregação socioespacial, favelização e dinâmicas das metrópoles regionais." },
-        { num: 7, title: "Industrialização e Reestruturação Produtiva", desc: "As revoluções industriais, divisão territorial do trabalho, distritos industriais e a nova geografia fabril do Brasil." },
-        { num: 8, title: "Geopolítica, Globalização e Ordem Mundial", desc: "Globalização, blocos econômicos, a nova divisão internacional do trabalho, fluxos globais e o debate de fronteiras/territorialidades." },
-        { num: 9, title: "Planejamento Ambiental e Sustentabilidade", desc: "Impactos antrópicos, relatórios RIMA/EIA, unidades de conservação brasileiras e mitigação de desastres ecológicos." },
-        { num: 10, title: "Cartografia Escolar e Alfabetização Cartográfica", desc: "Projeções, escalas, sistemas de informação geográfica (SIG), fuso horário e cartografia como linguagem ativa no Ensino Médio." }
-      ]
-    }
-  ];
-
-  const currentSector = sectors.find(s => s.id === selectedSectorId) || sectors[0];
+  const currentSector = visibleSectors.find(s => s.id === selectedSectorId) || visibleSectors[0] || sectors[0];
 
   // Point Drawing Logic
   const handleDrawPoints = () => {
@@ -486,24 +638,34 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
     setWrittenPoint(null);
     setDidacticPoint(null);
 
+    const totalPoints = currentSector.points.length;
+    if (totalPoints === 0) {
+      setIsSorting(false);
+      return;
+    }
+
     // Simulate sorting delay with intervals for dramatic effect
     let counter = 0;
     const interval = setInterval(() => {
-      const tempWritten = currentSector.points[Math.floor(Math.random() * 10)];
+      const tempWritten = currentSector.points[Math.floor(Math.random() * totalPoints)];
       setWrittenPoint(tempWritten);
       counter++;
       if (counter > 8) {
         clearInterval(interval);
         
         // Final draw
-        const finalWrittenIndex = Math.floor(Math.random() * 10);
+        const finalWrittenIndex = Math.floor(Math.random() * totalPoints);
         const finalWritten = currentSector.points[finalWrittenIndex];
         setWrittenPoint(finalWritten);
 
-        // Draw didactic point from remaining 9 points
+        // Draw didactic point from remaining points
         const remainingPoints = currentSector.points.filter((_, i) => i !== finalWrittenIndex);
-        const finalDidactic = remainingPoints[Math.floor(Math.random() * 9)];
-        setDidacticPoint(finalDidactic);
+        if (remainingPoints.length > 0) {
+          const finalDidactic = remainingPoints[Math.floor(Math.random() * remainingPoints.length)];
+          setDidacticPoint(finalDidactic);
+        } else {
+          setDidacticPoint(null);
+        }
 
         setIsSorting(false);
         setShowSorterInstructions(false);
@@ -656,7 +818,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
         <div className="space-y-3.5 border-t border-b border-slate-150 py-6 my-6">
           <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider font-display">Resumo por Setor de Estudo</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sectors.map((sec) => {
+            {visibleSectors.map((sec) => {
               const secStats = getSectorStats(sec);
               const isCur = sec.id === currentSector.id;
               return (
@@ -862,7 +1024,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                 <div className="bg-white rounded-xl border border-slate-100 p-3.5 space-y-2">
                   <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-wider px-2 mb-1.5">Setores de Estudo (Edital)</h3>
                   <div className="space-y-1">
-                    {sectors.map((sec) => (
+                    {visibleSectors.map((sec) => (
                       <button
                         key={sec.id}
                         onClick={() => setSelectedSectorId(sec.id)}
@@ -1535,7 +1697,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                       }}
                       className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-slate-900"
                     >
-                      {sectors.map((sec) => (
+                      {visibleSectors.map((sec) => (
                         <option key={sec.id} value={sec.id}>
                           Setor {sec.code}: {sec.name}
                         </option>
@@ -2121,7 +2283,7 @@ max="10"
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sectors.map((sec) => {
+                  {visibleSectors.map((sec) => {
                     const stats = getSectorStats(sec);
                     const isActive = sec.id === currentSector.id;
                     return (
