@@ -907,20 +907,22 @@ export default function DashboardModule({
                           fontSize={10}
                           tickLine={false}
                           axisLine={false}
+                          allowDecimals={false}
                           tickFormatter={(val) => chartViewMode === "percent" ? `${val}%` : val}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                         {chartViewMode === "count" ? (
                           <>
-                            <Bar dataKey="Respondidas" name="Respondidas" fill="#cbd5e1" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                            <Bar dataKey="Corretas" name="Corretas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                            <Bar dataKey="Respondidas" name="Respondidas" fill="#e2e8f0" radius={[5, 5, 0, 0]} maxBarSize={20} />
+                            <Bar dataKey="Corretas" name="Corretas" fill="#10b981" radius={[5, 5, 0, 0]} maxBarSize={20} />
                           </>
                         ) : (
-                          <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                          <Bar dataKey="Aproveitamento" name="Aproveitamento (%)" radius={[5, 5, 0, 0]} maxBarSize={28}>
                             {chartData.map((entry, index) => {
                               let barColor = "#3b82f6"; // blue
+                              if (entry.key === "legislacao") barColor = "#3b82f6"; // blue
                               if (entry.key === "didatica") barColor = "#10b981"; // emerald
-                              if (entry.key === "ceara") barColor = "#a855f7"; // purple
+                              if (entry.key === "ceara") barColor = "#8b5cf6"; // purple
                               if (entry.key === "comuns") barColor = "#6366f1"; // indigo
                               if (entry.key === "especifico") barColor = "#f59e0b"; // amber
                               return <Cell key={`cell-${index}`} fill={barColor} />;
@@ -932,24 +934,44 @@ export default function DashboardModule({
                   </div>
                   
                   {/* Chart Legend Summary */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-4 border-t border-slate-100">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-5 border-t border-slate-100">
                     {chartData.map((item, index) => {
-                      let badgeColor = "bg-blue-505";
-                      if (item.key === "legislacao") badgeColor = "bg-blue-500";
-                      if (item.key === "didatica") badgeColor = "bg-emerald-500";
-                      if (item.key === "ceara") badgeColor = "bg-purple-500";
-                      if (item.key === "comuns") badgeColor = "bg-indigo-500";
-                      if (item.key === "especifico") badgeColor = "bg-amber-500";
+                      let badgeColor = "bg-blue-500";
+                      let bgBadge = "bg-blue-50/20 text-blue-700 border-blue-100/40";
+                      if (item.key === "legislacao") {
+                        badgeColor = "bg-blue-500";
+                        bgBadge = "bg-blue-50/25 text-blue-700 border-blue-100/30";
+                      } else if (item.key === "didatica") {
+                        badgeColor = "bg-emerald-500";
+                        bgBadge = "bg-emerald-50/25 text-emerald-700 border-emerald-100/30";
+                      } else if (item.key === "ceara") {
+                        badgeColor = "bg-purple-500";
+                        bgBadge = "bg-purple-50/25 text-purple-700 border-purple-100/30";
+                      } else if (item.key === "comuns") {
+                        badgeColor = "bg-indigo-500";
+                        bgBadge = "bg-indigo-50/25 text-indigo-700 border-indigo-100/30";
+                      } else if (item.key === "especifico") {
+                        badgeColor = "bg-amber-500";
+                        bgBadge = "bg-amber-50/25 text-amber-700 border-amber-100/30";
+                      }
 
                       return (
-                        <div key={index} className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${badgeColor}`}></span>
-                            <span className="text-[10px] font-bold text-slate-700">{item.category}</span>
+                        <div 
+                          key={index} 
+                          className={`flex flex-col justify-between p-3 rounded-xl border ${bgBadge} transition-all hover:bg-white`}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${badgeColor}`}></span>
+                            <span className="text-[10px] font-extrabold tracking-tight truncate uppercase font-sans">{item.category}</span>
                           </div>
-                          <p className="text-[10px] text-slate-400 font-mono pl-3.5">
-                            {item.Corretas}/{item.Respondidas} acg. ({item.Aproveitamento}%)
-                          </p>
+                          <div className="space-y-0.5">
+                            <p className="text-[11px] font-mono font-bold">
+                              {item.Corretas} / {item.Respondidas} <span className="text-[9px] font-semibold opacity-70">acertos</span>
+                            </p>
+                            <p className="text-[10px] font-bold opacity-80">
+                              Rendimento: <span className="font-mono font-extrabold">{item.Aproveitamento}%</span>
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
