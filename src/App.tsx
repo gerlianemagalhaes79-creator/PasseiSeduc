@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { UserProfile, StudyTopic, Flashcard } from "./types";
 import { INITIAL_TOPICS, DISCIPLINE_TOPICS } from "./data/initialTopics";
+import { getSectorForDiscipline } from "./data/sectorsData";
 import DashboardModule from "./components/DashboardModule";
 import SyllabusModule from "./components/SyllabusModule";
 import SimulatorModule from "./components/SimulatorModule";
@@ -178,9 +179,16 @@ export default function App() {
 
     // Generate discipline topics dynamically
     const baseTopics = INITIAL_TOPICS.filter(t => t.category !== "especifico");
-    const specificList = (profile && profile.hasEdital && profile.editalTopics && profile.editalTopics.length > 0)
-      ? profile.editalTopics
-      : (DISCIPLINE_TOPICS[discipline] || DISCIPLINE_TOPICS["Geral / Outros"]);
+    
+    const sector = getSectorForDiscipline(discipline);
+    let specificList: string[] = [];
+    if (profile && profile.hasEdital && profile.editalTopics && profile.editalTopics.length > 0) {
+      specificList = profile.editalTopics;
+    } else if (sector) {
+      specificList = sector.points.map(pt => `Ponto ${pt.num}: ${pt.title}`);
+    } else {
+      specificList = DISCIPLINE_TOPICS[discipline] || DISCIPLINE_TOPICS["Geral / Outros"];
+    }
     
     const mappedSpecifics: StudyTopic[] = specificList.map((spec, index) => ({
       id: `specific-${index}`,

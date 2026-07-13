@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { UserProfile, StudyTopic } from "../types";
 import { Award, BookOpen, Clock, Flame, GraduationCap, TrendingUp, CheckCircle, ListChecks, Calendar, CheckSquare, Check, Edit3, Plus, Trash2, RotateCcw, Info, X, Save, ChevronDown, ChevronUp, Brain, Search, Sparkles, Target, Filter, HelpCircle, ChevronLeft, ChevronRight, CalendarDays, ExternalLink, Lightbulb, BookOpenCheck, HelpCircle as QuestionIcon, Printer, LayoutDashboard, Layers } from "lucide-react";
 import { motion } from "motion/react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { getStudyGuideForTopic } from "../data/topicStudyGuides";
+import { getStudyGuideForTopic, TOPIC_STUDY_GUIDES } from "../data/topicStudyGuides";
+import { getSectorForDiscipline, getPointSubtopics } from "../data/sectorsData";
 
 interface DashboardProps {
   profile: UserProfile;
@@ -137,74 +138,118 @@ export default function DashboardModule({
 
   // System recommended default schedule helper
   const getSystemDefaults = (): ScheduleItem[] => {
-    const isSocio = profile.discipline === "Sociologia";
     const disciplineName = profile.discipline;
+    const hours = profile.studyHours || 3;
+
+    // Helper to extract first few subtopics for each category to show as specific examples
+    const getSubtopicsForCategory = (cat: string, maxCount = 2): string[] => {
+      const catTopics = topics.filter(t => t.category === cat);
+      if (catTopics.length === 0) return ["Estudo dos tópicos gerais do edital"];
+      
+      const getSubtopicsForTopic = (top: StudyTopic): string[] => {
+        if (top.category === "especifico") {
+          const sector = getSectorForDiscipline(profile.discipline);
+          if (sector) {
+            const match = top.name.match(/Ponto\s+(\d+)/i);
+            const ptNum = match ? parseInt(match[1]) : null;
+            let point = sector.points.find(p => p.num === ptNum);
+            if (!point) {
+              point = sector.points.find(p => top.name.toLowerCase().includes(p.title.toLowerCase()) || p.title.toLowerCase().includes(top.name.toLowerCase()));
+            }
+            if (point) {
+              return getPointSubtopics(point.desc, point.title);
+            }
+          }
+          return getPointSubtopics("", top.name);
+        } else {
+          let guide = TOPIC_STUDY_GUIDES[top.name];
+          if (!guide) {
+            guide = Object.values(TOPIC_STUDY_GUIDES).find(g => 
+              g.topicName.toLowerCase().includes(top.name.toLowerCase()) || 
+              top.name.toLowerCase().includes(g.topicName.toLowerCase())
+            );
+          }
+          if (guide && guide.subtopics && guide.subtopics.length > 0) {
+            return guide.subtopics;
+          }
+          return getPointSubtopics("", top.name);
+        }
+      };
+
+      const all = catTopics.flatMap(getSubtopicsForTopic);
+      return all.slice(0, maxCount);
+    };
+
+    const portSubs = getSubtopicsForCategory("comuns", 2);
+    const didacticaSubs = getSubtopicsForCategory("didatica", 2);
+    const legSubs = getSubtopicsForCategory("legislacao", 2);
+    const cearaSubs = getSubtopicsForCategory("ceara", 2);
+    const indSubs = getSubtopicsForCategory("ceara", 2);
+    const specSubs = getSubtopicsForCategory("especifico", 2);
 
     return [
       { 
         day: "Segunda", 
-        desc: "Língua Portuguesa (Sintaxe e Classes) + Administração Pública do Ceará", 
+        desc: `Português + Didática + Específico // ${[portSubs[0], didacticaSubs[0], specSubs[0]].filter(Boolean).join(" + ")}`, 
         pct: "85%", 
-        color: "bg-indigo-600", 
-        time: "19:00 - 21:00", 
-        notes: "Português: Classes de palavras e concordância verbal/nominal. Administração: Estatuto do Ceará (Lei nº 9.826/1974) e Estatuto do Magistério (Lei nº 10.884/1984)." 
+        color: "bg-sky-600", 
+        time: "19:00 - " + (19 + Math.round(hours)) + ":00", 
+        notes: `📚 **PROGRAMAÇÃO DE SEGUNDA-FEIRA (Estudo Intercalado)**\n\n📘 **Língua Portuguesa**\n* Subtópicos hoje:\n${portSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Leitura teórica e resolução de 10 questões da FUNECE.\n\n🟢 **Didática & Temas Pedagógicos**\n* Subtópicos hoje:\n${didacticaSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Fixação ativa dos conceitos por meio de resumos.\n\n🟡 **Conhecimentos Específicos**\n* Subtópicos hoje:\n${specSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Estudo focado em problemas e teoria essencial.`
       },
       { 
         day: "Terça", 
-        desc: "Temas Educacionais e Pedagógicos + Específico", 
+        desc: `Legislação + Ceará + Específico // ${[legSubs[0], cearaSubs[0], specSubs[1] || specSubs[0]].filter(Boolean).join(" + ")}`, 
         pct: "75%", 
-        color: "bg-emerald-500", 
-        time: "19:00 - 21:00", 
-        notes: `Pedagogia: Teorias de aprendizagem (Piaget, Vygotsky) e didática. Específico: Tópicos iniciais do edital de ${disciplineName}.` 
+        color: "bg-indigo-600", 
+        time: "19:00 - " + (19 + Math.round(hours)) + ":00", 
+        notes: `📚 **PROGRAMAÇÃO DE TERÇA-FEIRA (Estudo Intercalado)**\n\n⚖️ **Legislação Educacional Nacional**\n* Subtópicos hoje:\n${legSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Leitura focada em prazos e definições da LDB/ECA.\n\n🏛️ **Administração Pública & Ceará**\n* Subtópicos hoje:\n${cearaSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Análise de artigos do Estatuto dos Servidores Públicos Civis do Ceará.\n\n🟡 **Conhecimentos Específicos**\n* Subtópicos hoje:\n${specSubs.slice(1).map(s => `  - ${s}`).join("\n") || "  - Aprofundamento teórico-prático do conteúdo do edital"}\n* Orientação: Prática focada e resolução de exercícios do tema.`
       },
       { 
         day: "Quarta", 
-        desc: "Leitura de Dados e Indicadores + Legislação Básica (LDB)", 
+        desc: `Português + Didática + Indicadores // ${[portSubs[0], didacticaSubs[0], indSubs[0]].filter(Boolean).join(" + ")}`, 
         pct: "80%", 
-        color: "bg-blue-500", 
-        time: "19:00 - 21:00", 
-        notes: "Indicadores: SPAECE, SAEB, IDEB, taxas de fluxo e distorção idade-série. Legislação: LDB (Lei nº 9.394/1996) e ECA (Lei nº 8.069/1990)." 
+        color: "bg-emerald-500", 
+        time: "19:00 - " + (19 + Math.round(hours)) + ":00", 
+        notes: `📚 **PROGRAMAÇÃO DE QUARTA-FEIRA (Estudo Intercalado)**\n\n📘 **Língua Portuguesa**\n* Subtópicos hoje:\n${portSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Análise de textos e resoluções sintáticas.\n\n🟢 **Didática & Temas Pedagógicos**\n* Subtópicos hoje:\n${didacticaSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Consolidação de correntes pedagógicas e didática.\n\n📊 **Dados e Indicadores Educacionais**\n* Subtópicos hoje:\n${indSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Memorização de siglas, fórmulas de fluxo do IDEB e indicators do SPAECE.`
       },
       { 
         day: "Quinta", 
-        desc: isSocio ? "Sociologia: Teoria dos Clássicos (Marx, Durkheim, Weber)" : `Conhecimentos Específicos de ${disciplineName}`, 
+        desc: `Legislação + Ceará + Específico // ${[legSubs[1] || legSubs[0], cearaSubs[1] || cearaSubs[0], specSubs[0]].filter(Boolean).join(" + ")}`, 
         pct: "95%", 
-        color: "bg-amber-500", 
-        time: "19:00 - 21:00", 
-        notes: isSocio 
-          ? "Estudo detalhado de Karl Marx, Émile Durkheim e Max Weber (Teorias, Conceitos e Métodos)."
-          : `Aprofundamento em tópicos fundamentais do edital de conhecimentos específicos de ${disciplineName}.` 
+        color: "bg-purple-600", 
+        time: "19:00 - " + (19 + Math.round(hours)) + ":00", 
+        notes: `📚 **PROGRAMAÇÃO DE QUINTA-FEIRA (Estudo Intercalado)**\n\n⚖️ **Legislação Educacional Nacional**\n* Subtópicos hoje:\n${legSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Estudo das diretrizes nacionais e reformas do Ensino Médio.\n\n🏛️ **Administração Pública & Ceará**\n* Subtópicos hoje:\n${cearaSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Direitos, deveres e plano de carreira do Magistério do Ceará.\n\n🟡 **Conhecimentos Específicos**\n* Subtópicos hoje:\n${specSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Aprofundamento conceitual e resolução de simulados de ${disciplineName}.`
       },
       { 
         day: "Sexta", 
-        desc: "Temas Pedagógicos + Legislação (PNE, PEE-CE e CF/88)", 
+        desc: `Didática + Indicadores + Específico // ${[didacticaSubs[1] || didacticaSubs[0], indSubs[1] || indSubs[0], specSubs[1] || specSubs[0]].filter(Boolean).join(" + ")}`, 
         pct: "70%", 
-        color: "bg-rose-500", 
-        time: "19:00 - 21:00", 
-        notes: "Pedagogia: Projeto Político Pedagógico (PPP) e teorias do currículo. Legislação: Constituição Federal (Da Educação) e Planos (PNE e PEE-CE)." 
+        color: "bg-amber-500", 
+        time: "19:00 - " + (19 + Math.round(hours)) + ":00", 
+        notes: `📚 **PROGRAMAÇÃO DE SEXTA-FEIRA (Estudo Intercalado)**\n\n🟢 **Didática & Temas Pedagógicos**\n* Subtópicos hoje:\n${didacticaSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Estudo do papel do professor e dimensão ética da docência.\n\n📊 **Dados e Indicadores Educacionais**\n* Subtópicos hoje:\n${indSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Exercícios práticos sobre as estatísticas educacionais do Ceará.\n\n🟡 **Conhecimentos Específicos**\n* Subtópicos hoje:\n${specSubs.map(s => `  - ${s}`).join("\n")}\n* Orientação: Revisão de fórmulas e conceitos da sua disciplina específica.`
       },
       { 
         day: "Sábado", 
-        desc: "Simulado Geral Seduc-CE (Básicos + Específicos)", 
+        desc: "Simulado Geral Seduc-CE", 
         pct: "95%", 
-        color: "bg-purple-600", 
+        color: "bg-rose-500 font-semibold text-white", 
         time: "09:00 - 12:00", 
-        notes: "Aplicação prática de questões baseadas no edital (Temas Pedagógicos, Administração Pública, Português, Indicadores e Conteúdo Específico)." 
+        notes: "🎯 **SIMULADO DE SÁBADO**\n\nResolva questões de todas as disciplinas estudadas ao longo da semana para consolidar o aprendizado sob pressão de tempo (3 minutos por questão)."
       },
       { 
         day: "Domingo", 
-        desc: "Revisão Ativa e Análise de Erros", 
+        desc: "Revisão de Erros & Descanso 🌿", 
         pct: "35%", 
         color: "bg-teal-500", 
         time: "10:00 - 11:30", 
-        notes: "Mapeamento das questões erradas no simulado de sábado. Estudo direcionado das justificativas de erros com o Professor Mentor." 
+        notes: "🧠 **ATIVIDADE DE DOMINGO: APRENDIZAGEM COM ERROS**\n\nAnalise detalhadamente cada erro cometido no simulado de sábado, registre em seu caderno de erros e descanse no período da tarde para renovar as energias."
       }
     ];
   };
 
   // Persistent custom schedule items
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>(() => {
-    const saved = localStorage.getItem("ia_aprova_custom_schedule_v4");
+    const saved = localStorage.getItem("ia_aprova_custom_schedule_v5");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -217,7 +262,7 @@ export default function DashboardModule({
   });
 
   useEffect(() => {
-    localStorage.setItem("ia_aprova_custom_schedule_v4", JSON.stringify(scheduleItems));
+    localStorage.setItem("ia_aprova_custom_schedule_v5", JSON.stringify(scheduleItems));
   }, [scheduleItems]);
 
   useEffect(() => {
@@ -300,212 +345,315 @@ export default function DashboardModule({
   const [currentCalendarYear, setCurrentCalendarYear] = useState(2026);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(6); // 6 is July
 
-  const getTopicForDate = (year: number, month: number, day: number) => {
-    if (!profile.examDate) return null;
-    
-    const currentDate = new Date(year, month, day);
-    currentDate.setHours(0, 0, 0, 0);
-    
-    const examDateObj = new Date(profile.examDate + "T12:00:00");
-    examDateObj.setHours(0, 0, 0, 0);
-    
-    if (currentDate.getTime() === examDateObj.getTime()) {
-      return {
-        title: "🏁 DIA DA PROVA!",
-        desc: "Hoje é o grande dia da sua aprovação no Concurso Seduc-CE!",
-        isExam: true,
-        color: "bg-rose-600",
-        time: "08:00 - 13:00",
-        notes: "Realize a prova com calma. Você se preparou até o fim!"
-      };
-    }
-    
-    if (currentDate.getTime() > examDateObj.getTime()) {
-      return null;
-    }
+  // Pre-calculate the entire interleaved schedule for the active study period
+  const examSchedule = useMemo(() => {
+    if (!profile.examDate) return {};
     
     const startDateObj = new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00");
     startDateObj.setHours(0, 0, 0, 0);
     
-    if (currentDate.getTime() < startDateObj.getTime()) {
-      return null;
-    }
+    const examDateObj = new Date(profile.examDate + "T12:00:00");
+    examDateObj.setHours(0, 0, 0, 0);
     
-    // Total days available from start to the day before the exam
     const totalDaysAvailable = Math.max(0, Math.floor((examDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
-    
-    // Reserve the final week before the exam for review and rest (up to 7 days, adjusted if total days are very short)
     const reviewDays = totalDaysAvailable >= 10 ? 7 : (totalDaysAvailable >= 2 ? 1 : 0);
+    const totalActiveStudyDays = totalDaysAvailable - reviewDays;
     
-    const daysToExam = Math.floor((examDateObj.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+    const getSubtopicsForTopic = (top: StudyTopic): string[] => {
+      if (top.category === "especifico") {
+        const sector = getSectorForDiscipline(profile.discipline);
+        if (sector) {
+          const match = top.name.match(/Ponto\s+(\d+)/i);
+          const ptNum = match ? parseInt(match[1]) : null;
+          let point = sector.points.find(p => p.num === ptNum);
+          if (!point) {
+            point = sector.points.find(p => top.name.toLowerCase().includes(p.title.toLowerCase()) || p.title.toLowerCase().includes(top.name.toLowerCase()));
+          }
+          if (point) {
+            return getPointSubtopics(point.desc, point.title);
+          }
+        }
+        return getPointSubtopics("", top.name);
+      } else {
+        let guide = TOPIC_STUDY_GUIDES[top.name];
+        if (!guide) {
+          guide = Object.values(TOPIC_STUDY_GUIDES).find(g => 
+            g.topicName.toLowerCase().includes(top.name.toLowerCase()) || 
+            top.name.toLowerCase().includes(g.topicName.toLowerCase())
+          );
+        }
+        if (guide && guide.subtopics && guide.subtopics.length > 0) {
+          return guide.subtopics;
+        }
+        return getPointSubtopics("", top.name);
+      }
+    };
+
+    const portuguesSubtopics = topics.filter(t => t.category === "comuns").flatMap(getSubtopicsForTopic);
+    const didaticaSubtopics = topics.filter(t => t.category === "didatica").flatMap(getSubtopicsForTopic);
+    const legislacaoSubtopics = topics.filter(t => t.category === "legislacao").flatMap(getSubtopicsForTopic);
+    const cearaSubtopics = topics.filter(t => t.category === "ceara").flatMap(getSubtopicsForTopic);
+    const especificoSubtopics = topics.filter(t => t.category === "especifico").flatMap(getSubtopicsForTopic);
+
+    const weekdayCategories: Record<number, string[]> = {
+      1: ["comuns", "didatica", "especifico"],
+      2: ["legislacao", "especifico"],
+      3: ["comuns", "didatica", "ceara"],
+      4: ["legislacao", "especifico"],
+      5: ["didatica", "ceara", "especifico"]
+    };
+
+    const sessionCounts: Record<string, number> = {
+      comuns: 0,
+      didatica: 0,
+      legislacao: 0,
+      ceara: 0,
+      especifico: 0
+    };
+
+    for (let dayIdx = 0; dayIdx < totalActiveStudyDays; dayIdx++) {
+      const d = new Date(startDateObj);
+      d.setDate(startDateObj.getDate() + dayIdx);
+      const wkday = d.getDay();
+      if (wkday >= 1 && wkday <= 5) {
+        const cats = weekdayCategories[wkday] || [];
+        cats.forEach(cat => {
+          if (sessionCounts[cat] !== undefined) sessionCounts[cat]++;
+        });
+      }
+    }
+
+    const categorySlices: Record<string, string[][]> = {
+      comuns: [],
+      didatica: [],
+      legislacao: [],
+      ceara: [],
+      especifico: []
+    };
+
+    const distributeSubtopics = (allSubs: string[], sessionsCount: number): string[][] => {
+      const slices: string[][] = [];
+      if (sessionsCount <= 0) return slices;
+      const L = allSubs.length;
+      if (L === 0) {
+        return Array.from({ length: sessionsCount }, () => ["Revisão de conceitos essenciais"]);
+      }
+      
+      const base = Math.floor(L / sessionsCount);
+      const extra = L % sessionsCount;
+      
+      for (let s = 0; s < sessionsCount; s++) {
+        const start = s * base + Math.min(s, extra);
+        const end = (s + 1) * base + Math.min(s + 1, extra);
+        let slice = allSubs.slice(start, end);
+        if (slice.length === 0) {
+          slice = [allSubs[s % L] || "Revisão Geral"];
+        }
+        slices.push(slice);
+      }
+      return slices;
+    };
+
+    categorySlices.comuns = distributeSubtopics(portuguesSubtopics, sessionCounts.comuns);
+    categorySlices.didatica = distributeSubtopics(didaticaSubtopics, sessionCounts.didatica);
+    categorySlices.legislacao = distributeSubtopics(legislacaoSubtopics, sessionCounts.legislacao);
+    categorySlices.ceara = distributeSubtopics(cearaSubtopics, sessionCounts.ceara);
+    categorySlices.especifico = distributeSubtopics(especificoSubtopics, sessionCounts.especifico);
+
+    const categorySessionIndices: Record<string, number> = {
+      comuns: 0,
+      didatica: 0,
+      legislacao: 0,
+      ceara: 0,
+      especifico: 0
+    };
+
     const hours = profile.studyHours || 3;
-    
-    // Last week before the exam: Review and rest ONLY
-    if (daysToExam >= 1 && daysToExam <= reviewDays) {
-      if (reviewDays === 7) {
-        if (daysToExam === 7) {
-          return {
-            title: "Revisão: Temas Pedagógicos",
-            desc: "Revisão Ativa: Temas Educacionais e Pedagógicos",
-            color: "bg-emerald-500",
-            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-            notes: "Fase de Revisão Final: Utilize seus resumos, mapas mentais e faça questões rápidas de fixação sobre os Temas Pedagógicos do edital."
-          };
-        }
-        if (daysToExam === 6) {
-          return {
-            title: "Revisão: Legislação & Admin.",
-            desc: "Revisão Ativa: Administração Pública e Legislação Básica",
-            color: "bg-indigo-600",
-            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-            notes: "Fase de Revisão Final: Revise a LDB, o Estatuto do Ceará e o Estatuto do Magistério. Foque em prazos e regras específicas!"
-          };
-        }
-        if (daysToExam === 5) {
-          return {
-            title: "Revisão: Língua Portuguesa",
-            desc: "Revisão Ativa: Língua Portuguesa Básica",
-            color: "bg-blue-500",
-            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-            notes: "Fase de Revisão Final: Faça questões sobre concordância, regência, pontuação e crase da banca FUNECE."
-          };
-        }
-        if (daysToExam === 4) {
-          return {
-            title: "Revisão: Dados & Indicadores",
-            desc: "Revisão Ativa: Leitura e Interpretação de Dados e Indicadores",
-            color: "bg-purple-600",
-            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-            notes: "Fase de Revisão Final: Revise fórmulas do IDEB, distorção idade-série e taxas de fluxo escolar (abandono, evasão)."
-          };
-        }
-        if (daysToExam === 3) {
-          return {
-            title: `Revisão: Específico (${profile.discipline})`,
-            desc: `Revisão Ativa: Conhecimentos Específicos de ${profile.discipline}`,
-            color: "bg-amber-500",
-            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-            notes: `Fase de Revisão Final: Dedique este dia para consolidar as fórmulas, teorias e conceitos mais cobrados de ${profile.discipline}.`
-          };
-        }
-        if (daysToExam === 2) {
-          return {
-            title: "Simulado Geral Seduc-CE",
-            desc: "Simulado Final Completo Seduc-CE",
-            color: "bg-teal-600 font-semibold",
-            time: "08:00 - 12:00",
-            notes: "Simulado Geral Final: Reserve 4 horas ininterruptas e resolva uma prova completa simulando as condições reais do concurso."
-          };
-        }
-        if (daysToExam === 1) {
-          return {
+    const scheduleMap: Record<string, any> = {};
+
+    let current = new Date(startDateObj);
+    while (current <= examDateObj) {
+      const timeKey = `${current.getFullYear()}-${current.getMonth()}-${current.getDate()}`;
+      const daysToExam = Math.floor((examDateObj.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysToExam === 0) {
+        scheduleMap[timeKey] = {
+          title: "🏁 DIA DA PROVA!",
+          desc: "Hoje é o grande dia da sua aprovação no Concurso Seduc-CE!",
+          isExam: true,
+          color: "bg-rose-600 font-bold text-white",
+          time: "08:00 - 13:00",
+          notes: "Realize a prova com calma. Você se preparou até o fim! Confie no seu processo."
+        };
+      } else if (daysToExam <= reviewDays) {
+        if (reviewDays === 7) {
+          if (daysToExam === 7) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Temas Pedagógicos",
+              desc: "Revisão Ativa: Temas Educacionais e Pedagógicos",
+              color: "bg-emerald-500",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Utilize seus resumos, mapas mentais e faça questões rápidas de fixação sobre os Temas Pedagógicos do edital."
+            };
+          } else if (daysToExam === 6) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Legislação & Admin.",
+              desc: "Revisão Ativa: Administração Pública e Legislação Básica",
+              color: "bg-indigo-600",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Revise a LDB, o Estatuto do Ceará e o Estatuto do Magistério. Foque em prazos e regras específicas!"
+            };
+          } else if (daysToExam === 5) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Língua Portuguesa",
+              desc: "Revisão Ativa: Língua Portuguesa Básica",
+              color: "bg-blue-500",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Faça questões sobre concordância, regência, pontuação e crase da banca FUNECE."
+            };
+          } else if (daysToExam === 4) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Dados & Indicadores",
+              desc: "Revisão Ativa: Leitura e Interpretação de Dados e Indicadores",
+              color: "bg-purple-600",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Revise fórmulas do IDEB, distorção idade-série e taxas de fluxo escolar (abandono, evasão)."
+            };
+          } else if (daysToExam === 3) {
+            scheduleMap[timeKey] = {
+              title: `Revisão: Específico (${profile.discipline})`,
+              desc: `Revisão Ativa: Conhecimentos Específicos de ${profile.discipline}`,
+              color: "bg-amber-500",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: `Fase de Revisão Final: Dedique este dia para consolidar as fórmulas, teorias e conceitos mais cobrados de ${profile.discipline}.`
+            };
+          } else if (daysToExam === 2) {
+            scheduleMap[timeKey] = {
+              title: "Simulado Geral Seduc-CE",
+              desc: "Simulado Final Completo Seduc-CE",
+              color: "bg-teal-600 font-semibold",
+              time: "08:00 - 12:00",
+              notes: "Simulado Geral Final: Reserve 4 horas ininterruptas e resolva uma prova completa simulando as condições reais do concurso."
+            };
+          } else if (daysToExam === 1) {
+            scheduleMap[timeKey] = {
+              title: "Descanso e Preparação Mental 🌿",
+              desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
+              color: "bg-teal-500 font-bold",
+              time: "Livre",
+              notes: "Sem estudos hoje! Durma cedo, mantenha-se hidratado, separe o documento com foto, caneta preta e descanse o cérebro para o grande dia."
+            };
+          }
+        } else {
+          scheduleMap[timeKey] = {
             title: "Descanso e Preparação Mental 🌿",
             desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
             color: "bg-teal-500 font-bold",
             time: "Livre",
-            notes: "Sem estudos hoje! Durma cedo, mantenha-se hidratado, separe o documento com foto, caneta preta e descanse o cérebro para o grande dia."
+            notes: "Sem estudos hoje! Descanse bem, separe canetas e documentos e prepare a mente para a prova amanhã."
           };
         }
       } else {
-        // If 1 review day
-        return {
-          title: "Descanso e Preparação Mental 🌿",
-          desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
-          color: "bg-teal-500 font-bold",
-          time: "Livre",
-          notes: "Sem estudos hoje! Descanse bem, separe canetas e documentos e prepare a mente para a prova amanhã."
-        };
-      }
-    }
-    
-    // Active study days (all days before the review week)
-    const totalActiveStudyDays = totalDaysAvailable - reviewDays;
-    if (totalActiveStudyDays <= 0) {
-      // Emergency fallback if total days is very small
-      const activeTopics = [...topics];
-      if (activeTopics.length === 0) return null;
-      const dayIndex = Math.floor((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
-      const topic = activeTopics[dayIndex % activeTopics.length];
-      return {
-        title: topic.name,
-        desc: `Foco: ${topic.name}`,
-        color: topic.category === "legislacao" ? "bg-indigo-600" :
-               topic.category === "didatica" ? "bg-emerald-500" :
-               topic.category === "ceara" ? "bg-purple-600" :
-               topic.category === "especifico" ? "bg-amber-500" : "bg-blue-500",
-        time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-        notes: `Estudo programático acelerado: ${topic.name}. Resolva questões e revise os conceitos chave.`
-      };
-    }
-    
-    const currentActiveDayIndex = Math.floor((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
-    if (currentActiveDayIndex < 0 || currentActiveDayIndex >= totalActiveStudyDays) {
-      return null;
-    }
-    
-    const activeTopics = [...topics];
-    const N = activeTopics.length;
-    const M = totalActiveStudyDays;
-    
-    if (N === 0) return null;
-    
-    let allocatedTopics: typeof topics = [];
-    
-    if (M >= N) {
-      // More days than topics. Spread topics sequentially over the days.
-      const baseDaysPerTopic = Math.floor(M / N);
-      const extraDays = M % N;
-      
-      let dayAccumulator = 0;
-      for (let i = 0; i < N; i++) {
-        const daysForThisTopic = baseDaysPerTopic + (i < extraDays ? 1 : 0);
-        if (currentActiveDayIndex >= dayAccumulator && currentActiveDayIndex < dayAccumulator + daysForThisTopic) {
-          allocatedTopics = [activeTopics[i]];
-          break;
+        const wkday = current.getDay();
+        if (wkday === 6) {
+          scheduleMap[timeKey] = {
+            title: "Simulado Geral + Revisão",
+            desc: "Simulado Geral Temático de Sábado",
+            color: "bg-rose-500 font-semibold text-white",
+            time: "09:00 - 12:00",
+            notes: "🎯 **ATIVIDADE DE SÁBADO: SIMULADO DE FIXAÇÃO**\n\nResolva 30 a 40 questões focadas nos temas estudados de segunda a sexta desta semana.\n\nFoque em reproduzir o ambiente de prova: sem celular, sem consultas, cronometrando o tempo médio de 3 minutos por questão."
+          };
+        } else if (wkday === 0) {
+          scheduleMap[timeKey] = {
+            title: "Revisão de Erros e Descanso 🌿",
+            desc: "Análise ativa do simulado e descanso restaurador",
+            color: "bg-teal-500 text-white",
+            time: "10:00 - 12:00",
+            notes: "🧠 **ATIVIDADE DE DOMINGO: APRENDIZAGEM COM ERROS**\n\n1. Abra o gabarito do simulado de ontem.\n2. Para cada erro, identifique se foi por falta de atenção, pressa, ou desconhecimento teórico.\n3. Revise as regras ou pontos correspondentes por 1 hora.\n4. Tire o restante do dia livre para lazer e descanso. Você merece!"
+          };
+        } else {
+          const cats = weekdayCategories[wkday] || [];
+          const notesParts: string[] = [];
+          const descParts: string[] = [];
+          const subtopicsForDesc: string[] = [];
+          
+          cats.forEach(cat => {
+            const s_idx = categorySessionIndices[cat];
+            const slices = categorySlices[cat] || [];
+            const subtopicsToday = slices[s_idx] || [];
+            
+            categorySessionIndices[cat]++;
+            
+            let catName = "";
+            let emoji = "";
+            let orientation = "";
+            
+            if (cat === "comuns") {
+              catName = "Português";
+              emoji = "📘";
+              orientation = "Estudo teórico, análise de regras gerais e resolução de 10 a 15 questões da banca FUNECE.";
+            } else if (cat === "didatica") {
+              catName = "Didática";
+              emoji = "🟢";
+              orientation = "Fichamento rápido dos conceitos, mapas mentais e memorização das correntes/autores pedagógicos.";
+            } else if (cat === "legislacao") {
+              catName = "Legislação";
+              emoji = "⚖️";
+              orientation = "Leitura atenta da letra da lei (LDB/ECA) destacando prazos, responsabilidades e exceções.";
+            } else if (cat === "ceara") {
+              catName = "Indicadores";
+              emoji = "📊";
+              orientation = "Interpretação ativa de tabelas, siglas e fórmulas do IDEB, taxas de transição e SPAECE.";
+            } else if (cat === "especifico") {
+              catName = "Específico";
+              emoji = "🟡";
+              orientation = "Aprofundamento teórico-prático do conteúdo com dedicação especial a resolução de problemas.";
+            }
+            
+            descParts.push(catName);
+            if (subtopicsToday && subtopicsToday.length > 0) {
+              subtopicsForDesc.push(subtopicsToday[0]);
+            }
+            notesParts.push(`${emoji} **${catName}**\n* **Subtópicos a estudar hoje:**\n${subtopicsToday.map(s => `  - ${s}`).join("\n")}\n* **Orientação de Estudo:** ${orientation}\n`);
+          });
+          
+          const title = cats.map(cat => {
+            if (cat === "comuns") return "Português";
+            if (cat === "didatica") return "Didática";
+            if (cat === "legislacao") return "Legislação";
+            if (cat === "ceara") return "Indicadores";
+            return "Específico";
+          }).join(" • ");
+          
+          const color = wkday === 1 ? "bg-sky-600" :
+                        wkday === 2 ? "bg-indigo-600" :
+                        wkday === 3 ? "bg-emerald-500" :
+                        wkday === 4 ? "bg-purple-600" : "bg-amber-500";
+          
+          const combinedDesc = subtopicsForDesc.length > 0
+            ? `${descParts.join(" + ")} // ${subtopicsForDesc.join(" + ")}`
+            : descParts.join(" + ");
+
+          scheduleMap[timeKey] = {
+            title: title,
+            desc: combinedDesc,
+            color: color,
+            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+            notes: `📚 **PROGRAMAÇÃO DE ESTUDOS DO DIA**\n\nHoje o seu estudo segue uma estratégia de aprendizagem intercalada (interleaving). Estude os seguintes conteúdos:\n\n${notesParts.join("\n")}`
+          };
         }
-        dayAccumulator += daysForThisTopic;
       }
-    } else {
-      // Fewer days than topics. Group multiple topics per day so everything is covered.
-      const baseTopicsPerDay = Math.floor(N / M);
-      const extraTopics = N % M;
       
-      let topicAccumulator = 0;
-      for (let day = 0; day < M; day++) {
-        const topicsForThisDay = baseTopicsPerDay + (day < extraTopics ? 1 : 0);
-        if (day === currentActiveDayIndex) {
-          allocatedTopics = activeTopics.slice(topicAccumulator, topicAccumulator + topicsForThisDay);
-          break;
-        }
-        topicAccumulator += topicsForThisDay;
-      }
+      current.setDate(current.getDate() + 1);
     }
     
-    if (allocatedTopics.length === 0) return null;
-    
-    if (allocatedTopics.length === 1) {
-      const topic = allocatedTopics[0];
-      return {
-        title: topic.name,
-        desc: `Foco: ${topic.name}`,
-        color: topic.category === "legislacao" ? "bg-indigo-600" :
-               topic.category === "didatica" ? "bg-emerald-500" :
-               topic.category === "ceara" ? "bg-purple-600" :
-               topic.category === "especifico" ? "bg-amber-500" : "bg-blue-500",
-        time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-        notes: `Estudo programático do edital: ${topic.name}. Resolva questões e estude a teoria correspondente.`
-      };
-    } else {
-      const mainTopic = allocatedTopics[0];
-      const topicNames = allocatedTopics.map(t => t.name).join(" + ");
-      return {
-        title: `${mainTopic.name} (+${allocatedTopics.length - 1})`,
-        desc: `Estudo Intensivo: ${topicNames}`,
-        color: "bg-teal-600",
-        time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-        notes: `Hoje você tem um bloco intensivo cobrindo os seguintes temas do edital:\n${allocatedTopics.map((t, idx) => `${idx + 1}. ${t.name}`).join("\n")}\n\nFoque em revisar os pontos-chave de cada um e resolver questões rápidas de fixação.`
-      };
-    }
+    return scheduleMap;
+  }, [profile, topics]);
+
+  const getTopicForDate = (year: number, month: number, day: number) => {
+    if (!profile.examDate) return null;
+    const timeKey = `${year}-${month}-${day}`;
+    return examSchedule[timeKey] || null;
   };
 
   // Form Fields for editing
@@ -1303,7 +1451,10 @@ export default function DashboardModule({
                           isExam: (dateTopic as any).isExam
                         } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
                         
-                        const cleanInfo = scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "", subtopic: "" };
+                        const cleanInfo = dateTopic ? {
+                          subject: "Estudo Intercalado",
+                          subtopic: dateTopic.desc
+                        } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "", subtopic: "" });
                         const isSelected = !profile.examDate && editingDayIndex === itemIndex && itemIndex !== -1;
                         const isDone = scheduleItem ? !!completedDays[weekdayName] : false;
                         const isExam = scheduleItem && (scheduleItem as any).isExam;
@@ -1425,7 +1576,7 @@ export default function DashboardModule({
                             </span>
                           </div>
                           
-                          <p className="font-semibold text-slate-700 text-xs mb-1.5 line-clamp-1 font-sans">{item.desc}</p>
+                          <p className="font-semibold text-slate-700 text-xs mb-1.5 line-clamp-3 font-sans">{item.desc}</p>
                           
                           {item.notes && (
                             <p className="text-slate-500 text-[10px] line-clamp-2 bg-slate-50 p-1.5 rounded-md mb-2 italic font-sans">
@@ -1840,7 +1991,10 @@ export default function DashboardModule({
                           isExam: (dateTopic as any).isExam
                         } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
                         
-                        const cleanInfo = scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "", subtopic: "" };
+                        const cleanInfo = dateTopic ? {
+                          subject: "Estudo Intercalado",
+                          subtopic: dateTopic.desc
+                        } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "", subtopic: "" });
                         const isSelected = !profile.examDate && editingDayIndex === itemIndex && itemIndex !== -1;
                         const isDone = scheduleItem ? !!completedDays[weekdayName] : false;
                         const isExam = scheduleItem && (scheduleItem as any).isExam;
@@ -1966,7 +2120,7 @@ export default function DashboardModule({
                             </span>
                           </div>
                           
-                          <p className="font-semibold text-slate-700 text-xs mb-1.5 line-clamp-1">{item.desc}</p>
+                          <p className="font-semibold text-slate-700 text-xs mb-1.5 line-clamp-3">{item.desc}</p>
                           
                           {item.notes && (
                             <p className="text-slate-500 text-[10px] line-clamp-2 bg-slate-50 p-1.5 rounded-md mb-2 italic">
@@ -2599,6 +2753,16 @@ export default function DashboardModule({
           </div>
         </div>
 
+        {/* General Orientation Header Box */}
+        <div className="p-3 border-2 border-slate-900 rounded-xl bg-slate-50/25 mb-5 text-[10px] text-slate-800 leading-relaxed page-break-inside-avoid">
+          <h4 className="font-extrabold text-slate-950 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1">
+            📌 ORIENTAÇÃO GERAL DO CRONOGRAMA
+          </h4>
+          <p>
+            Execute o estudo programático do edital de forma sequencial. Para cada conteúdo programático detalhado listado no cronograma diário abaixo, estude a teoria correspondente (foco em resumos, esquemas e conceitos essenciais da bibliografia) e resolva ativamente blocos de questões da banca <strong>FUNECE</strong> para fixação prática. Marque seu progresso (<strong>T</strong>, <strong>Q</strong>, <strong>R</strong>) no final de cada dia estudado.
+          </p>
+        </div>
+
         {/* Detailed Table */}
         <div className="overflow-hidden border border-slate-300 rounded-xl">
           <table className="w-full border-collapse text-[10px] text-left">
@@ -2657,7 +2821,10 @@ export default function DashboardModule({
                     isExam: (dateTopic as any).isExam
                   } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
 
-                  const cleanInfo = scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "Livre / Revisão", subtopic: "Folga programada, simulados ou revisão de pontos fracos" };
+                  const cleanInfo = dateTopic ? {
+                    subject: "Estudo Intercalado",
+                    subtopic: dateTopic.desc
+                  } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "Livre / Revisão", subtopic: "Folga programada, simulados ou revisão de pontos fracos" });
                   const isExam = scheduleItem && (scheduleItem as any).isExam;
 
                   let badgeClass = "border border-slate-300 bg-slate-50 text-slate-800";
@@ -2697,12 +2864,6 @@ export default function DashboardModule({
                         <div className="font-bold text-slate-950 text-xs">
                           {isExam ? "GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026" : cleanInfo.subtopic}
                         </div>
-                        {scheduleItem?.notes && (
-                          <div className="text-[9px] text-slate-500 font-medium italic mt-0.5 flex gap-1 items-start">
-                            <span className="text-amber-500 shrink-0">📌</span>
-                            <span>Orientação: {scheduleItem.notes}</span>
-                          </div>
-                        )}
                       </td>
                       <td className="p-2.5 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-700 font-medium">
                         {scheduleItem ? scheduleItem.time : "Meta Livre"}

@@ -318,3 +318,208 @@ export const sectors: Sector[] = [
     ]
   }
 ];
+
+export interface PointAnalysis {
+  relevance: number;
+  style: string;
+  trap: string;
+  bibliography: string;
+}
+
+export function getPointAnalysis(sectorId: string, pointNum: number, title: string): PointAnalysis {
+  // Stable calculation for relevance
+  let relevance = 45 + ((pointNum * 7) % 51);
+  if (pointNum === 1 || pointNum === 3 || pointNum === 5) {
+    relevance = Math.min(95, relevance + 15);
+  }
+  
+  let style = "";
+  let trap = "";
+  let bibliography = "";
+  
+  if (sectorId === "planejamento") {
+    bibliography = "Libâneo, J. C. 'Organização e Gestão da Escola'; Luckesi, C. C. 'Avaliação da Aprendizagem Escolar'; Veiga, I. P. A. 'Projeto Político-Pedagógico'.";
+    if (pointNum === 1 || pointNum === 2) {
+      style = "Cobrança de teorias críticas sobre globalização, neoliberalismo e as exigências do Banco Mundial/OCDE para a educação básica.";
+      trap = "A banca tenta inverter o papel de agências internacionais, afirmando que elas buscam autonomia local, quando na verdade promovem padronização e avaliação gerencial em larga escala.";
+    } else if (pointNum === 3) {
+      style = "Cobrança das diretrizes do Plano Nacional de Educação (PNE), prazos, metas e a dinâmica de aprovação legislativa.";
+      trap = "Troca de prazos de vigência ou inversão do percentual de investimento do PIB em educação (metas do PNE).";
+    } else if (pointNum === 4 || pointNum === 9) {
+      style = "Foco em accountability, bonificação por resultados e indicadores estatísticos de larga escala (IDEB e SPAECE).";
+      trap = "Falsa premissa de que a bonificação de professores é um consenso pedagógico e não gera fragmentação ou exclusão de alunos com baixo desempenho.";
+    } else {
+      style = "Modelos de currículo integrado e discussões sobre o multiculturalismo e inclusão escolar no PPP.";
+      trap = "Definições de multiculturalismo crítico vs. liberal. A FUNECE costuma embaralhar as duas concepções pedagógicas.";
+    }
+  } else if (sectorId === "formacao_docente") {
+    bibliography = "Tardif, Maurice. 'Saberes Docentes e Formação Profissional'; Nóvoa, António. 'Os Professores e a sua Formação'; Schön, Donald. 'O Professor Reflexivo'.";
+    if (pointNum === 3 || pointNum === 9) {
+      style = "Classificação dos Saberes Docentes (Tardif): Saberes da formação profissional, disciplinares, curriculares e da experiência.";
+      trap = "Falar que os 'saberes da experiência' são puramente teóricos ou herança universitária, quando na verdade são os saberes que emergem da prática cotidiana do professor.";
+    } else if (pointNum === 5) {
+      style = "Conceitos de epistemologia da prática e as três instâncias de reflexão propostas por Donald Schön.";
+      trap = "Trocar as definições de 'reflexão-na-ação' (em tempo de prática) por 'reflexão-sobre-a-ação' (após a prática).";
+    } else if (pointNum === 6) {
+      style = "Visão crítica de Dermeval Saviani sobre as teorias reprodutivistas e a pedagogia histórico-crítica.";
+      trap = "Enquadrar Saviani como defensor da pedagogia tecnicista ou tradicionalista de mercado.";
+    } else {
+      style = "Fases da carreira docente segundo Huberman (entrada, estabilização, diversificação) e narrativas de vida de Nóvoa.";
+      trap = "Troca de nomes das fases do ciclo de vida docente descritas por Huberman.";
+    }
+  } else if (sectorId === "ens_matematica") {
+    bibliography = "Vergnaud, Gérard. 'A Teoria dos Campos Conceituais'; D'Ambrosio, Ubiratan. 'Etnomatemática'; Duval, Raymond. 'Semiótica e Aprendizagem Matemática'.";
+    if (pointNum === 3) {
+      style = "Estruturas aditivas e multiplicativas segundo Vergnaud, analisando problemas de proporção, partição e combinação.";
+      trap = "Confundir o campo aditivo com o multiplicativo na transição didática do Ensino Fundamental.";
+    } else if (pointNum === 6) {
+      style = "Etnomatemática de D'Ambrosio, focando em como grupos culturais específicos constroem e operam sistemas matemáticos.";
+      trap = "A banca sugere que a etnomatematica dispensa o ensino da matemática formal acadêmica, o que é um erro de interpretação crasso.";
+    } else if (pointNum === 9) {
+      style = "Teoria dos Registros de Representação Semiótica de Duval. Foco na importância de transitar entre gráfico, numérico e verbal.";
+      trap = "Afirmar que o estudante aprende sem a necessidade de múltiplos registros, ou que a mera representação visual substitui o raciocínio formal.";
+    } else {
+      style = "Avaliação formativa aplicada à matemática escolar e a análise construtiva de erros segundo Maria Regina Cury.";
+      trap = "Ver o erro apenas como punição e não como indicador diagnóstico do raciocínio lógico do aluno.";
+    }
+  } else if (sectorId === "matematica") {
+    bibliography = "Boldrini, José Luiz. 'Álgebra Linear'; Boyce, William E. 'Equações Diferenciais Elementares e Problemas de Valores de Contorno'; Morettin, Pedro A. 'Estatística Básica'.";
+    if (pointNum <= 2) {
+      style = "Matrizes, determinantes e discussão de sistemas lineares usando o Teorema de Rouché-Capelli.";
+      trap = "Trocar condições de sistemas possíveis indeterminados por sistemas impossíveis na parametrização.";
+    } else if (pointNum === 3 || pointNum === 4 || pointNum === 5) {
+      style = "Formulação de modelos físicos de crescimento e decaimento por EDOs lineares de 1ª ordem.";
+      trap = "Errar a constante de integração ou confundir o comportamento assintótico de equações logísticas.";
+    } else {
+      style = "Teorema Fundamental do Cálculo, séries de potências e polinômio de Taylor com estimativa de resto de Lagrange.";
+      trap = "Falta de verificação de continuidade e derivabilidade do intervalo antes de aplicar o Teorema Fundamental do Cálculo.";
+    }
+  } else if (sectorId === "linguistica") {
+    bibliography = "Saussure, F. 'Curso de Linguística Geral'; Koch, Ingedore. 'A Coesão Textual'; Bakhtin, Mikhail. 'Estética da Criação Verbal'.";
+    if (pointNum <= 2) {
+      style = "Dicotomias saussurianas clássicas ou a gramática gerativa de Noam Chomsky.";
+      trap = "Inverter os conceitos de competência e desempenho de Chomsky, ou língua (social) e fala (individual) de Saussure.";
+    } else if (pointNum === 8 || pointNum === 9) {
+      style = "Mecanismos de coesão textual de Koch e Marcuschi, e a caracterização de gêneros do discurso por Bakhtin.";
+      trap = "Confundir coesão referencial (anáfora, catáfora) com coesão sequencial (conectivos lógicos de progressão).";
+    } else {
+      style = "Pragmática linguística: atos de fala de Austin/Searle e implicaturas de Grice.";
+      trap = "Inverter implicatura convencional e implicatura conversacional nas interações sociais de fala.";
+    }
+  } else if (sectorId === "literatura") {
+    bibliography = "Bosi, Alfredo. 'História Concisa da Literatura Brasileira'; Candido, Antonio. 'Formação da Literatura Brasileira'.";
+    if (pointNum <= 2) {
+      style = "Poesia social e intimista de Carlos Drummond de Andrade, ou a engenharia do verso rigoroso de João Cabral de Melo Neto.";
+      trap = "Falsa associação entre a poesia de Cabral com sentimentalismo exacerbado, sendo que ele é o poeta da pedra, da concisão e da anti-lírica.";
+    } else if (pointNum === 3 || pointNum === 5) {
+      style = "Realismo de Machado de Assis ('Quincas Borba') e regionalismo de 30 de Graciliano Ramos ('São Bernardo').";
+      trap = "Confundir a filosofia irônica do Humanitismo de Quincas Borba com mero pessimismo sem base material ou crítica ao capitalismo.";
+    } else {
+      style = "Modernismo de Mário de Andrade, tragédia suburbana de Nelson Rodrigues ou hermetismo lírico em Fernando Pessoa.";
+      trap = "Enquadrar Nelson Rodrigues na escola realista burguesa convencional, ocultando o caráter mítico e expressionista de suas peças.";
+    }
+  } else if (sectorId === "historia_brasil") {
+    bibliography = "Fausto, Boris. 'História do Brasil'; Schwarcz, Lilia M. 'Brasil: Uma Biografia'; Prado Júnior, Caio. 'Formação do Brasil Contemporâneo'.";
+    if (pointNum <= 3) {
+      style = "Resistência indígena colonial, tráfico negreiro transatlântico e revoltas nativistas/emancipacionistas.";
+      trap = "Ver as revoltas nativistas como movimentos pela independência total, esquecendo que eram rebeliões de caráter local e elitista.";
+    } else if (pointNum === 5) {
+      style = "Abolicionismo brasileiro, enfatizando a libertação precoce de escravizados no Ceará em 1884.";
+      trap = "Desconsiderar a agência direta dos escravizados nas fugas e jangadas, atribuindo a abolição apenas às elites de intelectuais cearenses.";
+    } else {
+      style = "Ditadura militar, populismo, movimentos sociais da década de 1980 e as recentes crises pós-Constituição de 1988.";
+      trap = "Questões que invertem as causas das reformas de base ou as datas das leis institucionais da ditadura (AI-5, etc.).";
+    }
+  } else if (sectorId === "biologia") {
+    bibliography = "Alberts, B. 'Biologia Molecular da Célula'; Junqueira & Carneiro, 'Histologia Básica'; Odum, E. 'Ecologia'.";
+    if (pointNum === 1 || pointNum === 8) {
+      style = "Bioenergética e respiração celular, ou clonagem, transgenia e engenharia molecular recombinante.";
+      trap = "Inverter as fases da respiração celular (Glicólise, Ciclo de Krebs e Cadeia Respiratória) ou confundir fita simples/dupla de DNA/RNA.";
+    } else if (pointNum === 6 || pointNum === 7) {
+      style = "Dinâmica de ecossistemas, relações ecológicas e morfologia adaptativa do bioma Caatinga.";
+      trap = "Falar que as xerófitas da Caatinga acumulam água apenas por falta de estômatos, esquecendo as adaptações foliares em espinhos e cutícula espessa.";
+    } else {
+      style = "Genética clássica, fisiologia animal comparada e controle endócrino.";
+      trap = "Inversão entre os papéis de hormônios antagônicos (insulina/glucagon, calcitocina/paratormônio).";
+    }
+  } else if (sectorId === "sociologia") {
+    bibliography = "Giddens, Anthony. 'Sociologia'; Quintaneiro, Tania. 'Um Toque de Clássicos'; Bourdieu, Pierre. 'A Distinção'.";
+    if (pointNum <= 4) {
+      style = "Os três autores clássicos: Karl Marx (luta de classes, mais-valia), Durkheim (fatos sociais, anomia) e Max Weber (ação social).";
+      trap = "Atribuir o conceito de 'fato social' a Weber ou misturar a solidariedade orgânica durkheimiana com a luta de classes marxista.";
+    } else if (pointNum === 7) {
+      style = "Estrutura e reprodução social na ótica de Pierre Bourdieu, habitus e capital cultural.";
+      trap = "Definir o habitus como algo puramente biológico ou inflexível, desconsiderando que é uma estrutura estruturada e estruturante.";
+    } else {
+      style = "Trabalho, globalização e a transposição didática da Sociologia no ensino médio.";
+      trap = "Afirmar que o Toyotismo elimina a precarização trabalhista por promover a polivalência profissional do operário.";
+    }
+  } else if (sectorId === "geografia") {
+    bibliography = "Santos, Milton. 'A Natureza do Espaço'; Haesbaert, Rogério. 'O Mito da Desterritorialização'; Sene & Moreira, 'Geografia Geral e do Brasil'.";
+    if (pointNum === 1 || pointNum === 8) {
+      style = "Epistemologia da geografia escolar, territorialização e dinâmicas da globalização/multiterritorialidade.";
+      trap = "Assumir que a globalização extingue as fronteiras ou as identidades locais, ignorando as reações de fragmentação territorial.";
+    } else if (pointNum === 2 || pointNum === 3 || pointNum === 4) {
+      style = "Geografia física, domínios morfoclimáticos, geomorfologia e bacias hidrográficas do Ceará.";
+      trap = "Confundir os eixos de relevo do Ceará (Planalto de Ibiapaba, Chapada do Apodi, Depressão Sertaneja) ou suas bacias hidrográficas metropolitanas.";
+    } else {
+      style = "Geografia agrária, urbanização segregada e alfabetização cartográfica escolar ativa.";
+      trap = "Considerar a cartografia apenas como técnica reprodutiva (decorar mapas) em vez de uma linguagem de leitura crítica do espaço.";
+    }
+  } else {
+    style = "Abordagem conceitual profunda, combinando rigor acadêmico com exigência de transposição didática da banca.";
+    trap = "Foco em minúcias técnicas, conceitos invertidos nos distratores e pegadinhas com exceções à regra.";
+    bibliography = "Doutrinas de referência e textos normativos indicados no anexo do certame oficial.";
+  }
+  
+  return { relevance, style, trap, bibliography };
+}
+
+export function getSectorForDiscipline(discipline: string): Sector | undefined {
+  const disciplineLower = (discipline || "").toLowerCase().trim();
+  if (disciplineLower === "biologia") return sectors.find(s => s.id === "biologia");
+  if (disciplineLower === "história" || disciplineLower === "historia") return sectors.find(s => s.id === "historia");
+  if (disciplineLower === "língua portuguesa" || disciplineLower === "lingua portuguesa" || disciplineLower === "português" || disciplineLower === "portugues") return sectors.find(s => s.id === "portugues");
+  if (disciplineLower === "matemática" || disciplineLower === "matematica") return sectors.find(s => s.id === "matematica");
+  if (disciplineLower === "sociologia") return sectors.find(s => s.id === "sociologia");
+  if (disciplineLower === "geografia") return sectors.find(s => s.id === "geografia");
+  if (disciplineLower === "arte-educação" || disciplineLower === "arte educaçao" || disciplineLower === "arte-educacao" || disciplineLower === "arte" || disciplineLower === "artes") return sectors.find(s => s.id === "arte-educacao");
+  if (disciplineLower === "educação física" || disciplineLower === "educacao fisica") return sectors.find(s => s.id === "educacao-fisica");
+  if (disciplineLower === "filosofia") return sectors.find(s => s.id === "filosofia");
+  if (disciplineLower === "física" || disciplineLower === "fisica") return sectors.find(s => s.id === "fisica");
+  if (disciplineLower === "química" || disciplineLower === "quimica") return sectors.find(s => s.id === "quimica");
+  if (disciplineLower === "língua espanhola" || disciplineLower === "lingua espanhola" || disciplineLower === "espanhol") return sectors.find(s => s.id === "espanhol");
+  if (disciplineLower === "língua inglesa" || disciplineLower === "lingua inglesa" || disciplineLower === "inglês" || disciplineLower === "ingles") return sectors.find(s => s.id === "ingles");
+  if (disciplineLower === "libras") return sectors.find(s => s.id === "libras");
+  return undefined;
+}
+
+export function getPointSubtopics(desc: string, title: string): string[] {
+  if (!desc) return [title];
+  
+  let parts: string[] = [];
+  if (desc.includes(";")) {
+    parts = desc.split(";");
+  } else if (desc.includes(". ")) {
+    parts = desc.split(". ");
+  } else if (desc.includes(",")) {
+    parts = desc.split(",");
+  } else {
+    parts = [desc];
+  }
+  
+  const cleaned = parts
+    .map(p => p.trim())
+    .filter(p => p.length > 0)
+    .map(p => {
+      let s = p;
+      if (s.endsWith(".")) {
+        s = s.slice(0, -1);
+      }
+      if (s.length === 0) return "";
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    })
+    .filter(p => p.length > 0);
+  
+  return cleaned.length > 0 ? cleaned : [title];
+}
