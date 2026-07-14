@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Message, UserProfile, StudyTopic } from "../types";
 import { 
   Send, 
@@ -14,9 +14,12 @@ import {
   ChevronRight,
   Lightbulb,
   HelpCircle,
-  Cpu
+  Cpu,
+  CheckSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { TOPIC_STUDY_GUIDES } from "../data/topicStudyGuides";
+import { getSectorForDiscipline, getPointSubtopics } from "../data/sectorsData";
 
 interface MentorChatProps {
   profile: UserProfile;
@@ -25,6 +28,311 @@ interface MentorChatProps {
 }
 
 export default function MentorChatModule({ profile, currentTopic, topics = [] }: MentorChatProps) {
+  // Pre-calculate the entire interleaved schedule for the active study period (mirrors DashboardModule.tsx)
+  const examSchedule = useMemo(() => {
+    if (!profile.examDate) return {};
+    
+    const startDateObj = new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00");
+    startDateObj.setHours(0, 0, 0, 0);
+    
+    const examDateObj = new Date(profile.examDate + "T12:00:00");
+    examDateObj.setHours(0, 0, 0, 0);
+    
+    const totalDaysAvailable = Math.max(0, Math.floor((examDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+    const reviewDays = totalDaysAvailable >= 10 ? 7 : (totalDaysAvailable >= 2 ? 1 : 0);
+    const totalActiveStudyDays = totalDaysAvailable - reviewDays;
+    
+    const getSubtopicsForTopic = (top: StudyTopic): string[] => {
+      if (top.category === "especifico") {
+        const sector = getSectorForDiscipline(profile.discipline);
+        if (sector) {
+          const match = top.name.match(/Ponto\s+(\d+)/i);
+          const ptNum = match ? parseInt(match[1]) : null;
+          let point = sector.points.find(p => p.num === ptNum);
+          if (!point) {
+            point = sector.points.find(p => top.name.toLowerCase().includes(p.title.toLowerCase()) || p.title.toLowerCase().includes(top.name.toLowerCase()));
+          }
+          if (point) {
+            return getPointSubtopics(point.desc, point.title);
+          }
+        }
+        return getPointSubtopics("", top.name);
+      } else {
+        let guide = TOPIC_STUDY_GUIDES[top.name];
+        if (!guide) {
+          guide = Object.values(TOPIC_STUDY_GUIDES).find(g => 
+            g.topicName.toLowerCase().includes(top.name.toLowerCase()) || 
+            top.name.toLowerCase().includes(g.topicName.toLowerCase())
+          );
+        }
+        if (guide && guide.subtopics && guide.subtopics.length > 0) {
+          return guide.subtopics;
+        }
+        return getPointSubtopics("", top.name);
+      }
+    };
+
+    const portuguesSubtopics = topics.filter(t => t.category === "comuns").flatMap(getSubtopicsForTopic);
+    const didaticaSubtopics = topics.filter(t => t.category === "didatica").flatMap(getSubtopicsForTopic);
+    const legislacaoSubtopics = topics.filter(t => t.category === "legislacao").flatMap(getSubtopicsForTopic);
+    const cearaSubtopics = topics.filter(t => t.category === "ceara").flatMap(getSubtopicsForTopic);
+    const especificoSubtopics = topics.filter(t => t.category === "especifico").flatMap(getSubtopicsForTopic);
+
+    const weekdayCategories: Record<number, string[]> = {
+      1: ["comuns", "didatica", "especifico"],
+      2: ["legislacao", "especifico"],
+      3: ["comuns", "didatica", "ceara"],
+      4: ["legislacao", "especifico"],
+      5: ["didatica", "ceara", "especifico"]
+    };
+
+    const sessionCounts: Record<string, number> = {
+      comuns: 0,
+      didatica: 0,
+      legislacao: 0,
+      ceara: 0,
+      especifico: 0
+    };
+
+    for (let dayIdx = 0; dayIdx < totalActiveStudyDays; dayIdx++) {
+      const d = new Date(startDateObj);
+      d.setDate(startDateObj.getDate() + dayIdx);
+      const wkday = d.getDay();
+      if (wkday >= 1 && wkday <= 5) {
+        const cats = weekdayCategories[wkday] || [];
+        cats.forEach(cat => {
+          if (sessionCounts[cat] !== undefined) sessionCounts[cat]++;
+        });
+      }
+    }
+
+    const categorySlices: Record<string, string[][]> = {
+      comuns: [],
+      didatica: [],
+      legislacao: [],
+      ceara: [],
+      especifico: []
+    };
+
+    const distributeSubtopics = (allSubs: string[], sessionsCount: number): string[][] => {
+      const slices: string[][] = [];
+      if (sessionsCount <= 0) return slices;
+      const L = allSubs.length;
+      if (L === 0) {
+        return Array.from({ length: sessionsCount }, () => ["Revisão de conceitos essenciais"]);
+      }
+      
+      const base = Math.floor(L / sessionsCount);
+      const extra = L % sessionsCount;
+      
+      for (let s = 0; s < sessionsCount; s++) {
+        const start = s * base + Math.min(s, extra);
+        const end = (s + 1) * base + Math.min(s + 1, extra);
+        let slice = allSubs.slice(start, end);
+        if (slice.length === 0) {
+          slice = [allSubs[s % L] || "Revisão Geral"];
+        }
+        slices.push(slice);
+      }
+      return slices;
+    };
+
+    categorySlices.comuns = distributeSubtopics(portuguesSubtopics, sessionCounts.comuns);
+    categorySlices.didatica = distributeSubtopics(didaticaSubtopics, sessionCounts.didatica);
+    categorySlices.legislacao = distributeSubtopics(legislacaoSubtopics, sessionCounts.legislacao);
+    categorySlices.ceara = distributeSubtopics(cearaSubtopics, sessionCounts.ceara);
+    categorySlices.especifico = distributeSubtopics(especificoSubtopics, sessionCounts.especifico);
+
+    const categorySessionIndices: Record<string, number> = {
+      comuns: 0,
+      didatica: 0,
+      legislacao: 0,
+      ceara: 0,
+      especifico: 0
+    };
+
+    const hours = profile.studyHours || 3;
+    const scheduleMap: Record<string, any> = {};
+
+    let current = new Date(startDateObj);
+    while (current <= examDateObj) {
+      const timeKey = `${current.getFullYear()}-${current.getMonth()}-${current.getDate()}`;
+      const daysToExam = Math.floor((examDateObj.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysToExam === 0) {
+        scheduleMap[timeKey] = {
+          title: "🏁 DIA DA PROVA!",
+          desc: "Hoje é o grande dia da sua aprovação no Concurso Seduc-CE!",
+          isExam: true,
+          color: "bg-rose-600 font-bold text-white",
+          time: "08:00 - 13:00",
+          notes: "Realize a prova com calma. Você se preparou até o fim! Confie no seu processo."
+        };
+      } else if (daysToExam <= reviewDays) {
+        if (reviewDays === 7) {
+          if (daysToExam === 7) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Temas Pedagógicos",
+              desc: "Revisão Ativa: Temas Educacionais e Pedagógicos",
+              color: "bg-emerald-500",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Utilize seus resumos, mapas mentais e faça questões rápidas de fixação sobre os Temas Pedagógicos do edital."
+            };
+          } else if (daysToExam === 6) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Legislação & Admin.",
+              desc: "Revisão Ativa: Administração Pública e Legislação Básica",
+              color: "bg-indigo-600",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Revise a LDB, o Estatuto do Ceará e o Estatuto do Magistério. Foque em prazos e regras específicas!"
+            };
+          } else if (daysToExam === 5) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Língua Portuguesa",
+              desc: "Revisão Ativa: Língua Portuguesa Básica",
+              color: "bg-blue-500",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Faça questões sobre concordância, regência, pontuação e crase da banca FUNECE."
+            };
+          } else if (daysToExam === 4) {
+            scheduleMap[timeKey] = {
+              title: "Revisão: Dados & Indicadores",
+              desc: "Revisão Ativa: Leitura e Interpretação de Dados e Indicadores",
+              color: "bg-purple-600",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: "Fase de Revisão Final: Revise fórmulas do IDEB, distorção idade-série e taxas de fluxo escolar (abandono, evasão)."
+            };
+          } else if (daysToExam === 3) {
+            scheduleMap[timeKey] = {
+              title: `Revisão: Específico (${profile.discipline})`,
+              desc: `Revisão Ativa: Conhecimentos Específicos de ${profile.discipline}`,
+              color: "bg-amber-500",
+              time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+              notes: `Fase de Revisão Final: Dedique este dia para consolidar as fórmulas, teorias e conceitos mais cobrados de ${profile.discipline}.`
+            };
+          } else if (daysToExam === 2) {
+            scheduleMap[timeKey] = {
+              title: "Simulado Geral Seduc-CE",
+              desc: "Simulado Final Completo Seduc-CE",
+              color: "bg-teal-600 font-semibold",
+              time: "08:00 - 12:00",
+              notes: "Simulado Geral Final: Reserve 4 horas ininterruptas e resolva uma prova completa simulando as condições reais do concurso."
+            };
+          } else if (daysToExam === 1) {
+            scheduleMap[timeKey] = {
+              title: "Descanso e Preparação Mental 🌿",
+              desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
+              color: "bg-teal-500 font-bold",
+              time: "Livre",
+              notes: "Sem estudos hoje! Durma cedo, mantenha-se hidratado, separe o documento com foto, caneta preta e descanse o cérebro para o grande dia."
+            };
+          }
+        } else {
+          scheduleMap[timeKey] = {
+            title: "Descanso e Preparação Mental 🌿",
+            desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
+            color: "bg-teal-500 font-bold",
+            time: "Livre",
+            notes: "Sem estudos hoje! Descanse bem, separe canetas e documentos e prepare a mente para a prova amanhã."
+          };
+        }
+      } else {
+        const wkday = current.getDay();
+        if (wkday === 6) {
+          scheduleMap[timeKey] = {
+            title: "Simulado Geral + Revisão",
+            desc: "Simulado Geral Temático de Sábado",
+            color: "bg-rose-500 font-semibold text-white",
+            time: "09:00 - 12:00",
+            notes: "🎯 **ATIVIDADE DE SÁBADO: SIMULADO DE FIXAÇÃO**\n\nResolva 30 a 40 questões focadas nos temas estudados de segunda a sexta desta semana.\n\nFoque em reproduzir o ambiente de prova: sem celular, sem consultas, cronometrando o tempo médio de 3 minutos por questão."
+          };
+        } else if (wkday === 0) {
+          scheduleMap[timeKey] = {
+            title: "Revisão de Erros e Descanso 🌿",
+            desc: "Análise ativa do simulado e descanso restaurador",
+            color: "bg-teal-500 text-white",
+            time: "10:00 - 12:00",
+            notes: "🧠 **ATIVIDADE DE DOMINGO: APRENDIZAGEM COM ERROS**\n\n1. Abra o gabarito do simulado de ontem.\n2. Para cada erro, identifique se foi por falta de atenção, pressa, ou desconhecimento teórico.\n3. Revise as regras ou pontos correspondentes por 1 hora.\n4. Tire o restante do dia livre para lazer e descanso. Você merece!"
+          };
+        } else {
+          const cats = weekdayCategories[wkday] || [];
+          const notesParts: string[] = [];
+          const descParts: string[] = [];
+          const subtopicsForDesc: string[] = [];
+          
+          cats.forEach(cat => {
+            const s_idx = categorySessionIndices[cat];
+            const slices = categorySlices[cat] || [];
+            const subtopicsToday = slices[s_idx] || [];
+            
+            categorySessionIndices[cat]++;
+            
+            let catName = "";
+            let emoji = "";
+            let orientation = "";
+            
+            if (cat === "comuns") {
+              catName = "Português";
+              emoji = "📘";
+              orientation = "Estudo teórico, análise de regras gerais e resolução de 10 a 15 questões da banca FUNECE.";
+            } else if (cat === "didatica") {
+              catName = "Didática";
+              emoji = "🟢";
+              orientation = "Fichamento rápido dos conceitos, mapas mentais e memorização das correntes/autores pedagógicos.";
+            } else if (cat === "legislacao") {
+              catName = "Legislação";
+              emoji = "⚖️";
+              orientation = "Leitura atenta da letra da lei (LDB/ECA) destacando prazos, responsabilidades e exceções.";
+            } else if (cat === "ceara") {
+              catName = "Indicadores";
+              emoji = "📊";
+              orientation = "Interpretação ativa de tabelas, siglas e fórmulas do IDEB, taxas de transição e SPAECE.";
+            } else if (cat === "especifico") {
+              catName = "Específico";
+              emoji = "🟡";
+              orientation = "Aprofundamento teórico-prático do conteúdo com dedicação especial a resolução de problemas.";
+            }
+            
+            descParts.push(catName);
+            if (subtopicsToday && subtopicsToday.length > 0) {
+              subtopicsForDesc.push(subtopicsToday[0]);
+            }
+            notesParts.push(`${emoji} **${catName}**\n* **Subtópicos a estudar hoje:**\n${subtopicsToday.map(s => `  - ${s}`).join("\n")}\n* **Orientação de Estudo:** ${orientation}\n`);
+          });
+          
+          const title = cats.map(cat => {
+            if (cat === "comuns") return "Português";
+            if (cat === "didatica") return "Didática";
+            if (cat === "legislacao") return "Legislação";
+            if (cat === "ceara") return "Indicadores";
+            return "Específico";
+          }).join(" • ");
+          
+          const color = wkday === 1 ? "bg-sky-600" :
+                        wkday === 2 ? "bg-indigo-600" :
+                        wkday === 3 ? "bg-emerald-500" :
+                        wkday === 4 ? "bg-purple-600" : "bg-amber-500";
+          
+          const combinedDesc = subtopicsForDesc.length > 0
+            ? `${descParts.join(" + ")} // ${subtopicsForDesc.join(" + ")}`
+            : descParts.join(" + ");
+
+          scheduleMap[timeKey] = {
+            title: title,
+            desc: combinedDesc,
+            color: color,
+            time: "19:00 - " + (19 + Math.round(hours)) + ":00",
+            notes: `📚 **PROGRAMAÇÃO DE ESTUDOS DO DIA**\n\nHoje o seu estudo segue uma estratégia de aprendizagem intercalada (interleaving). Estude os seguintes conteúdos:\n\n${notesParts.join("\n")}`
+          };
+        }
+      }
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return scheduleMap;
+  }, [profile, topics]);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "initial",
@@ -107,6 +415,26 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
       fetchUrl = "/api/chat";
     }
 
+    // Retrieve calendar and schedule items from localStorage to send as context
+    const savedCompletedDays = localStorage.getItem("ia_aprova_completed_days");
+    let completedDaysObj = {};
+    if (savedCompletedDays) {
+      try {
+        completedDaysObj = JSON.parse(savedCompletedDays);
+      } catch (e) {}
+    }
+
+    const savedSchedule = localStorage.getItem("ia_aprova_custom_schedule_v5");
+    let scheduleList = [];
+    if (savedSchedule) {
+      try {
+        scheduleList = JSON.parse(savedSchedule);
+      } catch (e) {}
+    }
+
+    const completedTopicsList = topics.filter(t => t.completed).map(t => t.name);
+    const pendingTopicsList = topics.filter(t => !t.completed).map(t => t.name);
+
     // Filter down to struggling topics to send as helpful context
     const difficultyList = topics
       .filter(
@@ -120,6 +448,18 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
         answered: t.questionsAnswered
       }));
 
+    const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const clientDateStr = new Date().toLocaleDateString('pt-BR', options);
+
+    // Calculate today's dynamic calendar topic exactly matching what is rendered on the calendar
+    const todayDateObjForSchedule = new Date();
+    const todayScheduleKey = `${todayDateObjForSchedule.getFullYear()}-${todayDateObjForSchedule.getMonth()}-${todayDateObjForSchedule.getDate()}`;
+    const todayCalendarTopic = examSchedule[todayScheduleKey] || null;
+
+    const weekdayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+    const todayWeekdayName = weekdayNames[todayDateObjForSchedule.getDay()];
+    const isTodayCompleted = todayCalendarTopic ? !!(completedDaysObj as any)[todayWeekdayName] : false;
+
     try {
       const response = await fetch(fetchUrl, {
          method: "POST",
@@ -129,7 +469,15 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
            discipline: profile.discipline,
            banca: profile.banca,
            topic: currentTopic,
-           difficultyTopics: difficultyList
+           difficultyTopics: difficultyList,
+           completedDays: completedDaysObj,
+           scheduleItems: scheduleList,
+           completedTopics: completedTopicsList,
+           pendingTopics: pendingTopicsList,
+           clientDateStr: clientDateStr,
+           todayCalendarTopic: todayCalendarTopic,
+           isTodayCompleted: isTodayCompleted,
+           todayWeekdayName: todayWeekdayName
          })
       });
 
@@ -323,40 +671,40 @@ Você sabe me dizer quais etapas do ensino compõem essa faixa obrigatória? Vam
   // Preset commands that appear as dynamic choices
   const suggestions = [
     {
-      id: "study_plan",
-      label: "Criar Plano de Estudos",
+      id: "today_forecast",
+      label: "O que está previsto para eu estudar hoje?",
       icon: Calendar,
       color: "bg-emerald-50 border-emerald-100 text-emerald-800 hover:bg-emerald-100/50",
       iconColor: "text-emerald-600",
-      query: "Monte um plano de estudos semanal estruturado para mim",
-      desc: "Plano sob medida focado no edital"
+      query: "O que está previsto para eu estudar hoje no meu cronograma?",
+      desc: "Consulte a meta e assunto programados para hoje"
     },
     {
-      id: "ldb_tricks",
-      label: "Pegadinhas da LDB",
-      icon: AlertCircle,
-      color: "bg-amber-50 border-amber-100 text-amber-800 hover:bg-amber-100/50",
-      iconColor: "text-amber-600",
-      query: "Quais são as principais pegadinhas sobre a LDB?",
-      desc: "Evite as armadilhas comuns da banca"
-    },
-    {
-      id: "didactic",
-      label: "Exercitar Didática Geral",
+      id: "best_content",
+      label: "Onde encontro o melhor conteúdo para hoje?",
       icon: BookOpen,
       color: "bg-blue-50 border-blue-100 text-blue-800 hover:bg-blue-100/50",
       iconColor: "text-blue-500",
-      query: `Gere uma questão de didática no estilo da banca ${profile.banca || "FUNECE"}`,
-      desc: "Treino focado com questões exclusivas"
+      query: "Onde encontro o melhor conteúdo de estudos para os assuntos de hoje?",
+      desc: "Indicação de livros, artigos e guias de referência"
     },
     {
-      id: "bncc",
-      label: "BNCC e Minha Disciplina",
-      icon: Lightbulb,
+      id: "where_we_stopped",
+      label: "Onde paramos nos meus estudos?",
+      icon: CheckSquare,
       color: "bg-purple-50 border-purple-100 text-purple-800 hover:bg-purple-100/50",
       iconColor: "text-purple-500",
-      query: `Explique como a BNCC impacta o Ensino Médio de ${profile.discipline || "Biologia"}`,
-      desc: "Conexão direta com a área de atuação"
+      query: "Onde paramos nos meus estudos? Faça um balanço das metas concluídas",
+      desc: "Verifique os últimos tópicos concluídos com sucesso"
+    },
+    {
+      id: "delayed_subjects",
+      label: "Tem algum assunto atrasado?",
+      icon: AlertCircle,
+      color: "bg-amber-50 border-amber-100 text-amber-800 hover:bg-amber-100/50",
+      iconColor: "text-amber-600",
+      query: "Tem algum assunto atrasado ou pendente no meu cronograma?",
+      desc: "Análise de tópicos acumulados ou esquecidos"
     }
   ];
 
@@ -385,7 +733,7 @@ Você sabe me dizer quais etapas do ensino compõem essa faixa obrigatória? Vam
               {isFallback && (
                 <>
                   <span className="text-slate-300">•</span>
-                  <span className="text-amber-600 font-bold bg-amber-50 px-1 rounded">Modo Contingência</span>
+                  <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Base Local</span>
                 </>
               )}
             </div>

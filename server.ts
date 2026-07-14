@@ -630,17 +630,77 @@ Certifique-se de preencher todos os campos do JSON exigido sem exceção. O camp
 
 // Endpoint: Chat with Mentor
 app.post("/api/chat", async (req, res) => {
-  const { messages, discipline, banca, topic, difficultyTopics } = req.body;
+  const { 
+    messages, 
+    discipline, 
+    banca, 
+    topic, 
+    difficultyTopics,
+    completedDays,
+    scheduleItems,
+    completedTopics,
+    pendingTopics,
+    clientDateStr,
+    todayCalendarTopic,
+    isTodayCompleted,
+    todayWeekdayName
+  } = req.body;
 
   const ai = getGeminiClient();
   if (!ai) {
     console.warn("GEMINI_API_KEY is not defined. Using chat local fallback response.");
+    const lastUserMsg = messages && messages.length > 0 ? messages[messages.length - 1].content : "";
+    let replyText = "";
+    
+    // Resolve date and day of week
+    const dateToUse = clientDateStr || new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const capitalizedToday = dateToUse.charAt(0).toUpperCase() + dateToUse.slice(1);
+    
+    if (lastUserMsg.includes("previsto") || lastUserMsg.includes("hoje")) {
+      if (todayCalendarTopic) {
+        replyText = `### Meta de Hoje: **${todayCalendarTopic.title || "Meta de Hoje"}** 📅\n\nNo seu cronograma gerado para hoje, a meta de estudos é:\n* **Assuntos:** ${todayCalendarTopic.desc || ""}\n* **Horário:** ${todayCalendarTopic.time || "19:00 - 22:00"}\n* **Status Atual:** ${isTodayCompleted ? "✅ Concluído!" : "⏳ Pendente"}\n\n**Orientações para o estudo de hoje:**\n${todayCalendarTopic.notes || ""}\n\n**Como estudar estes assuntos hoje:**\n1. Use os Guias de Estudo rápidos na aba de Mapeamento para revisar as bases teóricas.\n2. Vá até o **Simulador** e responda a pelo menos 5 a 10 questões focadas da banca **${banca}** sobre estes temas.\n3. Se encontrar dificuldades ou quiser destrinchar alguma pegadinha, digite sua dúvida aqui!`;
+      } else {
+        const todayItem = (scheduleItems || []).find((item: any) => capitalizedToday.toLowerCase().includes((item.day || "").toLowerCase()));
+        
+        if (todayItem) {
+          const isDone = completedDays && completedDays[todayItem.day];
+          replyText = `### Meta de Hoje: **${todayItem.day}** 📅\n\nNo seu cronograma personalizado, a meta para hoje é:\n* **Assunto:** ${todayItem.desc}\n* **Foco/Peso:** ${todayItem.pct || "Alta relevância"}\n* **Status Atual:** ${isDone ? "✅ Concluído!" : "⏳ Pendente"}\n\n**Como estudar este assunto hoje:**\n1. Use o Guia de Estudos rápido e revise as bases teóricas.\n2. Vá até o **Simulador** e responda a pelo menos 5 questões focadas da banca **${banca}** sobre este tema.\n3. Se encontrar dificuldades, me avise aqui para destrincharmos as pegadinhas!`;
+        } else {
+          const firstPending = (scheduleItems || []).find((item: any) => completedDays && !completedDays[item.day]);
+          if (firstPending) {
+            replyText = `### Meta Recomendada para Hoje 📅\n\nIdentifiquei que sua próxima meta pendente é de **${firstPending.day}**:\n* **Assunto:** ${firstPending.desc}\n\nQue tal começarmos por ela hoje para manter seu ritmo impecável? Vá até o painel principal para marcar como concluída assim que terminar!`;
+          } else {
+            replyText = `### Meta de Estudos de Hoje 📅\n\nDe acordo com o seu calendário, todas as metas semanais do seu cronograma de estudos estão em dia! \n\nO foco sugerido de hoje é consolidar seu aprendizado na área de **${discipline}** resolvendo simulados gerais ou revisando seus flashcards.`;
+          }
+        }
+      }
+    } else if (lastUserMsg.includes("conteúdo") || lastUserMsg.includes("material")) {
+      const activeTopic = topic || "Assuntos de hoje";
+      replyText = `### Onde encontrar o melhor conteúdo? 📚\n\nPara o assunto de hoje (**${activeTopic}**), recomendo as seguintes fontes oficiais e de alta qualidade:\n\n* **Legislação e Diretrizes Educacionais:** Sempre estude pela legislação "seca" atualizada (direto nos sites do Planalto ou da Seduc-CE). Para a LDB e PNE, priorize os resumos comentados.\n* **Didática Geral e Currículo do Ceará:** O documento oficial do *Documento Curricular do Ceará (DCRC)* está disponível no portal da SEDUC-CE. Na didática geral, foque nas tendências pedagógicas (Libâneo e Saviani).\n* **Parte Específica de ${discipline}:** Utilize os materiais de apoio e as diretrizes curriculares do Ensino Médio da BNCC, que são a principal referência da banca **${banca}**.\n\nLembre-se de que os nossos guias de estudo rápidos na aba de Mapeamento já contêm resumos direcionados e dicas de pegadinhas para economizar seu tempo!`;
+    } else if (lastUserMsg.includes("paramos") || lastUserMsg.includes("onde paramos")) {
+      const completedCount = completedTopics?.length || 0;
+      const pendingCount = pendingTopics?.length || 0;
+      const totalCount = completedCount + pendingCount;
+      const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      
+      replyText = `### Onde paramos? 📈\n\nAnalisando o seu progresso no sistema preparatório:\n* **Assuntos Concluídos:** ${completedCount} de ${totalCount} (${pct}% concluído)\n* **Meta Ativa de Foco:** **${topic || "Não definida"}**\n\n**Resumo do Progresso:**\n${completedTopics && completedTopics.length > 0 
+        ? `Os últimos assuntos que você marcou como concluídos incluem: ${completedTopics.slice(-3).map((t: string) => `**${t}**`).join(", ")}.`
+        : "Você está iniciando sua jornada agora! Excelente momento para dar o primeiro passo."}\n\nPara continuar avançando, o próximo tópico recomendado na sua lista de pendentes é o seu assunto de foco atual. Pronto para fazer mais algumas questões?`;
+    } else if (lastUserMsg.includes("atrasado") || lastUserMsg.includes("pendente")) {
+      const pendingDays = (scheduleItems || []).filter((item: any) => completedDays && !completedDays[item.day]);
+      if (pendingDays.length > 0) {
+        replyText = `### Análise de Assuntos Atrasados/Pendentes ⏳\n\nIdentifiquei que você tem **${pendingDays.length} metas pendentes** no seu cronograma:\n\n${pendingDays.map((p: any) => `* **${p.day}**: ${p.desc}`).join("\n")}\n\n**Plano de Ação para Recuperação:**\n1. **Não se desespere:** É normal ter imprevistos na rotina. O importante é a constância.\n2. **Fracione o atraso:** Tente estudar uma meta pendente e meia a cada dia (adicionando cerca de 30 a 45 minutos de estudo diário).\n3. **Foque nas questões:** Resolva simulados rápidos desses assuntos para ver se você já domina a teoria, acelerando o processo.`;
+      } else {
+        replyText = `### Parabéns, Professor(a)! 🎉\n\nFiz uma verificação completa e **você não tem nenhum assunto ou dia atrasado no seu cronograma**! Todas as metas semanais planejadas estão marcadas como concluídas ou em dia. \n\nContinue com essa disciplina incrível. Esse ritmo constante é o que garante a nomeação!`;
+      }
+    } else {
+      replyText = `Olá! Como estou operando no modo de contingência local, quero destacar que para **${discipline}** sob a perspectiva da banca **${banca}**, é fundamental compreender as bases pedagógicas da LDB e do Currículo do Ceará. \n\nGostaria de focar em algum ponto específico das metas do PNE ou nos artigos da LDB relativos ao seu campo de atuação?`;
+    }
+
     return res.json({
       success: true,
       isFallback: true,
-      text: `Excelente pergunta! Como estou operando no modo de contingência local, quero destacar que para **${discipline}** sob a perspectiva da banca **${banca}**, é fundamental compreender as bases pedagógicas da LDB e do Currículo do Ceará. 
-
-Gostaria de focar em algum ponto específico das metas do PNE ou nos artigos da LDB relativos ao seu campo de atuação?`
+      text: replyText
     });
   }
 
@@ -691,19 +751,60 @@ Gostaria de focar em algum ponto específico das metas do PNE ou nos artigos da 
         "\nUse essa informação ativamente para guiá-lo, propor revisões e desafios práticos dirigidos sobre esses assuntos quando for pertinente e ajudá-lo a reverter essas dificuldades!";
     }
 
+    const resolvedDateStr = clientDateStr || new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Add comprehensive real-time study calendar progression context for Gemini
+    let progressContext = "";
+    
+    if (todayCalendarTopic) {
+      progressContext += `\n\nMETA ESPECÍFICA DO CALENDÁRIO GERADO PELO SISTEMA PARA HOJE (${resolvedDateStr}):\n`;
+      progressContext += `- **Título da Meta de Hoje:** ${todayCalendarTopic.title || ""}\n`;
+      progressContext += `- **Assuntos/Subtópicos Sugeridos da Meta de Hoje:** ${todayCalendarTopic.desc || ""}\n`;
+      progressContext += `- **Horário Planejado:** ${todayCalendarTopic.time || ""}\n`;
+      progressContext += `- **Orientações Importantes / Dicas de Estudo para Hoje:**\n${todayCalendarTopic.notes || ""}\n`;
+      progressContext += `- **Status de Conclusão da Meta de Hoje:** ${isTodayCompleted ? "CONCLUÍDO (Concluído pelo candidato)" : "PENDENTE (Não concluído)"}\n\n`;
+    }
+
+    if (scheduleItems && Array.isArray(scheduleItems) && scheduleItems.length > 0) {
+      progressContext += "\n\nCRONOGRAMA SEMANAL GERAL DE ESTUDOS DO CANDIDATO:\n";
+      scheduleItems.forEach((item: any) => {
+        const dayName = item.day || "";
+        const isDayCompleted = completedDays && completedDays[dayName];
+        progressContext += `- ${dayName}: ${item.desc || ""} [Status: ${isDayCompleted ? "CONCLUÍDO (Concluído pelo usuário)" : "PENDENTE (Não concluído)"}]\n`;
+      });
+    }
+
+    if (completedTopics && Array.isArray(completedTopics) && completedTopics.length > 0) {
+      progressContext += "\nTÓPICOS/ASSUNTOS DO EDITAL JÁ CONCLUÍDOS COM SUCESSO PELO CANDIDATO:\n" + completedTopics.map((t: string) => `- ${t}`).join("\n");
+    }
+
+    if (pendingTopics && Array.isArray(pendingTopics) && pendingTopics.length > 0) {
+      progressContext += "\nTÓPICOS/ASSUNTOS DO EDITAL QUE ESTÃO PENDENTES (Ainda precisam ser estudados):\n" + pendingTopics.slice(0, 20).map((t: string) => `- ${t}`).join("\n") + (pendingTopics.length > 20 ? `\n... e mais ${pendingTopics.length - 20} assuntos pendentes.` : "");
+    }
+
     const response = await generateContentWithRetry(ai, {
       model: "gemini-3.1-flash-lite",
       contents: sanitizedContents,
       config: {
-        systemInstruction: `Você é o "Professor Mentor", um tutor virtual inteligente extremamente encorajador, estratégico e altamente didático, focado na aprovação de docentes no Concurso da Rede Estadual do Ceará 2026.
+        systemInstruction: `Você é o "Professor Mentor", um tutor virtual inteligente e didático, focado na aprovação de docentes no Concurso da Rede Estadual do Ceará 2026.
 O candidato está estudando para a disciplina de **${discipline}** sob o estilo de cobrança específico da banca **${banca}**.
-O tópico ativo de foco é: **${topic}**.${struggleContext}
+O tópico ativo de foco é: **${topic || "Não definido"}**.${struggleContext}${progressContext}
 
-Diretrizes de resposta:
-- Responda em português.
-- Use técnicas de neurociência cognitiva e aprendizagem ativa: faça perguntas retóricas ou pequenos desafios para forçar a recuperação ativa da memória do candidato, em vez de dar respostas fáceis de bandeja.
-- Estruture sua resposta com formatação markdown limpa (use ### para cabeçalhos, ** para destaque e listas em tópicos para facilitar a leitura rápida).
-- Seja profissional, empático e focado no alto desempenho e na mentalidade de aprovação.`,
+DATA E DIA DA SEMANA ATUAL DO CANDIDATO: **${resolvedDateStr}**.
+ATENÇÃO CRÍTICA AO DIA DA SEMANA: Use o dia da semana contido na data acima com precisão absoluta (por exemplo, se nela diz "terça-feira", "quarta-feira", etc.). Nunca erre o dia da semana atual do candidato!
+
+Diretrizes importantes de Estilo e Comunicação:
+1. INTRODUÇÃO EXTREMAMENTE DIRETA E SUCINTA: Vá direto ao assunto de forma amigável na sua primeira frase ou parágrafo de saudação. Não use parágrafos longos de encorajamento vazio, clichês de autoajuda ou discursos repetitivos. Seja sucinto e focado no assunto.
+2. CONTEÚDO RICO E DE ALTA DENSIDADE (SEM "ENCHER LINGUIÇA"): Quando responder sobre conteúdos programáticos, didática ou legislação, seja muito completo, profundo, analítico e de alto nível, explicando os pormenores, mas faça-o de forma clara e livre de enrolações vazias ou redundâncias.
+3. Se o candidato perguntar "O que está previsto para eu estudar hoje?": consulte o Cronograma Semanal fornecido no contexto acima. Localize o dia da semana correto (por exemplo, terça-feira se a data atual for terça-feira) e diga o que está programado e o status. Se for PENDENTE, dê uma sugestão direta de estudo. Se já for CONCLUÍDO, elogie rapidamente e recomende o próximo pendente.
+4. Se o candidato perguntar "Onde encontro o melhor conteúdo para os assuntos de hoje?": apresente referências teóricas de peso específicas para o assunto de hoje (ex: LDB comentada, DCRC, referências didáticas específicas ou tópicos essenciais de ${discipline}).
+5. Se o candidato perguntar "Onde paramos?": verifique e cite os últimos assuntos concluídos e mostre as próximas metas pendentes de forma clara.
+6. Se o candidato perguntar "Tem algum assunto atrasado?": liste as metas pendentes anteriores ao dia atual e apresente uma sugestão prática para se recuperar sem estresse.
+
+Diretrizes adicionais:
+- Responda sempre em português.
+- Use recursos didáticos reais: de vez em quando, proponha um micro-desafio conceitual (como um caso prático rápido de sala de aula) para estimular o aprendizado ativo, sem floreios desnecessários.
+- Use formatação markdown elegante (### para títulos, ** para destaques, listas em bullets).`,
         temperature: 0.7
       }
     });

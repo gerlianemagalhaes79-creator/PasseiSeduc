@@ -218,7 +218,7 @@ export default function SimulatorModule({
       if (result.success && result.data) {
         setCurrentQuestion(result.data);
         if (result.isFallback) {
-          setErrorWarning(result.warning || "Modo de contingência local ativo.");
+          console.log(result.warning || "Modo de contingência local ativo.");
         }
       } else {
         throw new Error("Erro de resposta do servidor");
@@ -227,7 +227,6 @@ export default function SimulatorModule({
       console.error("Error fetching question:", error);
       const fallback = getLocalFallbackQuestion(actualTopicId, actualTopicName, profile.discipline, profile.banca);
       setCurrentQuestion(fallback);
-      setErrorWarning("Modo de contingência local ativo. Simulador carregado offline com sucesso.");
     } finally {
       setLoading(false);
     }
