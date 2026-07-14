@@ -44,16 +44,21 @@ async function generateContentWithRetry(
   },
   maxRetries = 1
 ): Promise<any> {
-  let primaryModel = options.model || "gemini-3.5-flash";
+  let primaryModel = options.model || "gemini-3.1-flash-lite";
   
-  // If gemini-3.5-flash is exhausted, dynamically shift the primary model to the lighter, high-quota model
+  // If gemini-3.5-flash is requested but exhausted, bypass to gemini-3.1-flash-lite
   if (primaryModel === "gemini-3.5-flash" && isGemini35Exhausted) {
     console.log("[Gemini Call] gemini-3.5-flash is currently flagged as exhausted. Bypassing directly to gemini-3.1-flash-lite...");
     primaryModel = "gemini-3.1-flash-lite";
   }
 
-  // Fall back to gemini-3.1-flash-lite if primary is gemini-3.5-flash, otherwise fallback to gemini-3.5-flash
-  const fallbackModel = primaryModel === "gemini-3.5-flash" ? "gemini-3.1-flash-lite" : "gemini-3.5-flash";
+  // Fall back to gemini-3.5-flash if primary is gemini-3.1-flash-lite, otherwise fallback to gemini-3.1-flash-lite
+  let fallbackModel = primaryModel === "gemini-3.1-flash-lite" ? "gemini-3.5-flash" : "gemini-3.1-flash-lite";
+  
+  // Skip fallback if fallback is gemini-3.5-flash and it is exhausted
+  if (fallbackModel === "gemini-3.5-flash" && isGemini35Exhausted) {
+    fallbackModel = "";
+  }
   
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -101,43 +106,48 @@ async function generateContentWithRetry(
         continue;
       }
       
-      console.warn(`[Gemini Call] ${primaryModel} failed. Transitioning to fallback model ${fallbackModel}...`);
+      console.warn(`[Gemini Call] ${primaryModel} failed. Transitioning to fallback model ${fallbackModel || "NONE"}...`);
       break; // Try fallback model
     }
   }
 
   // Try Fallback Model with retries
-  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
-    try {
-      console.log(`[Gemini Call] Requesting fallback ${fallbackModel} (Attempt ${attempt}/${maxRetries + 1})...`);
-      const response = await ai.models.generateContent({
-        model: fallbackModel,
-        contents: options.contents,
-        config: options.config,
-      });
-      return response;
-    } catch (err: any) {
-      const isPermanentClientError = err.status === 400 || 
-                                     err.statusCode === 400 || 
-                                     (err.message && err.message.includes("400")) ||
-                                     err.status === 401 ||
-                                     err.statusCode === 401 ||
-                                     (err.message && err.message.includes("401")) ||
-                                     err.status === 403 ||
-                                     err.statusCode === 403 ||
-                                     (err.message && err.message.includes("403"));
+  if (fallbackModel) {
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      try {
+        console.log(`[Gemini Call] Requesting fallback ${fallbackModel} (Attempt ${attempt}/${maxRetries + 1})...`);
+        const response = await ai.models.generateContent({
+          model: fallbackModel,
+          contents: options.contents,
+          config: options.config,
+        });
+        return response;
+      } catch (err: any) {
+        const isPermanentClientError = err.status === 400 || 
+                                       err.statusCode === 400 || 
+                                       (err.message && err.message.includes("400")) ||
+                                       err.status === 401 ||
+                                       err.statusCode === 401 ||
+                                       (err.message && err.message.includes("401")) ||
+                                       err.status === 403 ||
+                                       err.statusCode === 403 ||
+                                       (err.message && err.message.includes("403"));
 
-      const isRetriable = !isPermanentClientError;
+        const isRetriable = !isPermanentClientError;
 
-      if (isRetriable && attempt <= maxRetries) {
-        const delay = attempt * 1000;
-        console.warn(`[Gemini Call] Fallback ${fallbackModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
-        await sleep(delay);
-        continue;
+        if (isRetriable && attempt <= maxRetries) {
+          const delay = attempt * 1000;
+          console.warn(`[Gemini Call] Fallback ${fallbackModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
+          await sleep(delay);
+          continue;
+        }
+        console.error(`[Gemini Call] Both primary and fallback models failed.`);
+        throw err; // bubble up
       }
-      console.error(`[Gemini Call] Both primary and fallback models failed.`);
-      throw err; // bubble up
     }
+  } else {
+    console.error(`[Gemini Call] Primary model failed and no fallback model is available.`);
+    throw new Error(`Primary model ${primaryModel} failed and fallback is exhausted/unavailable.`);
   }
 }
 
@@ -461,7 +471,7 @@ Você deve mapear:
 3. Distratores de alta plausibilidade: táticas de desvios, confusões de conceitos e pegadinhas que a banca comumente cria para esse assunto específico.`;
 
     const analystResponse = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: analystPrompt,
       config: {
         systemInstruction: "Você é um especialista em análise de bancas examinadoras e pedagogia. Forneça respostas analíticas extremamente precisas e estruturadas em JSON.",
@@ -510,7 +520,7 @@ Diretrizes Críticas de Formulação:
 5. Defina uma única alternativa correta incontestável.`;
 
     const elaboratorResponse = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: elaboratorPrompt,
       config: {
         systemInstruction: "Você é um redator sênior de exames de concurso público. Crie questões realistas e difíceis com precisão psicométrica.",
@@ -603,7 +613,7 @@ Suas Tarefas de Auditoria:
     };
 
     const auditorResponse = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: auditorPrompt,
       config: {
         systemInstruction: `Você é o Auditor Final do PROMPT MASTER. Sua palavra é lei. Você garante perfeição pedagógica, jurídica e gramatical.
@@ -789,7 +799,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: sanitizedContents,
       config: {
         systemInstruction: `Você é o "Professor Mentor", um tutor virtual inteligente e didático, focado na aprovação de docentes no Concurso da Rede Estadual do Ceará 2026.
@@ -898,7 +908,7 @@ Esse documento deve conter instruções como:
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: prompt,
       config: {
         systemInstruction: `Você é o maior especialista do Brasil em Engenharia Reversa de bancas de concurso público, com foco absoluto na banca ${banca}. Você produz relatórios técnicos impecáveis, práticos, repletos de exemplos e formatação em markdown de extrema elegância, perfeitos para treinar outras IAs ou instruir candidatos de alto nível que buscam passar no concurso Seduc-CE e prefeituras em 2026. Escreva em português de forma clara, objetiva e extremamente formal.`,
