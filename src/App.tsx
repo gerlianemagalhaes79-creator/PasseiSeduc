@@ -15,7 +15,7 @@ import PendingScreen from "./components/PendingScreen";
 import AdminPanelModule from "./components/AdminPanelModule";
 import { auth, db } from "./lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, collection, getDocs, query, where, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, deleteDoc } from "firebase/firestore";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -55,11 +55,25 @@ export default function App() {
           
           if (userSnap.exists()) {
             const data = userSnap.data();
+            const isMasterAdmin = firebaseUser.email?.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+            let role = data.role || "student";
+            let status = data.status || "pending";
+
+            if (isMasterAdmin && (role !== "admin" || status !== "active")) {
+              role = "admin";
+              status = "active";
+              try {
+                await updateDoc(userDocRef, { role: "admin", status: "active" });
+              } catch (updateErr) {
+                console.error("Erro ao atualizar status do administrador no onAuthStateChanged:", updateErr);
+              }
+            }
+
             setUser({
               uid: firebaseUser.uid,
               email: firebaseUser.email || "",
-              role: data.role || "student",
-              status: data.status || "pending",
+              role,
+              status,
             });
           } else {
             const isMasterAdmin = firebaseUser.email?.toLowerCase() === "gerlianemagalhaes79@gmail.com";

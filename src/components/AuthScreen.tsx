@@ -71,11 +71,25 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
       if (userDoc.exists()) {
         const data = userDoc.data();
+        const isMasterAdmin = userEmail.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+        let role = data.role || "student";
+        let status = data.status || "pending";
+
+        if (isMasterAdmin && (role !== "admin" || status !== "active")) {
+          role = "admin";
+          status = "active";
+          try {
+            await updateDoc(userDocRef, { role: "admin", status: "active" });
+          } catch (updateErr) {
+            console.error("Erro ao atualizar status do administrador:", updateErr);
+          }
+        }
+
         onAuthSuccess({
           uid,
           email: userEmail,
-          role: data.role || "student",
-          status: data.status || "pending",
+          role,
+          status,
         });
       } else {
         const q = query(collection(db, "users"), where("email", "==", userEmail.toLowerCase().trim()));
@@ -162,11 +176,25 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
         if (userDoc.exists()) {
           const data = userDoc.data();
+          const isMasterAdmin = trimmedEmail.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+          let role = data.role || "student";
+          let status = data.status || "pending";
+
+          if (isMasterAdmin && (role !== "admin" || status !== "active")) {
+            role = "admin";
+            status = "active";
+            try {
+              await updateDoc(userDocRef, { role: "admin", status: "active" });
+            } catch (updateErr) {
+              console.error("Erro ao atualizar status do administrador:", updateErr);
+            }
+          }
+
           onAuthSuccess({
             uid,
             email: trimmedEmail,
-            role: data.role || "student",
-            status: data.status || "pending",
+            role,
+            status,
           });
         } else {
           // If Firestore document doesn't exist for some reason, check pre-approved lookup by email
