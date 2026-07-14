@@ -28,7 +28,9 @@ import {
   CheckSquare,
   ChevronDown,
   Calendar,
-  Layers
+  Layers,
+  Image,
+  Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -166,6 +168,26 @@ export default function App() {
     return "2026-09-26";
   });
 
+  const [squareLogo, setSquareLogo] = useState<string>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        return JSON.parse(saved).squareLogo || "";
+      } catch (e) {}
+    }
+    return "";
+  });
+
+  const [rectangularLogo, setRectangularLogo] = useState<string>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        return JSON.parse(saved).rectangularLogo || "";
+      } catch (e) {}
+    }
+    return "";
+  });
+
   const [editalText, setEditalText] = useState<string>(
     "Edital oficial SEDUC-CE de 2026. Prioriza LDB atualizada, Plano Nacional de Educação, Estatuto do Magistério do Ceará, Didática Geral, metodologias ativas e avaliação formativa."
   );
@@ -185,7 +207,9 @@ export default function App() {
       ...prev,
       discipline,
       banca,
-      examDate
+      examDate,
+      squareLogo,
+      rectangularLogo
     }));
 
     // Generate discipline topics dynamically
@@ -237,7 +261,29 @@ export default function App() {
     }
 
     setTopics(freshList);
-  }, [discipline, banca, examDate, profile?.hasEdital, profile?.editalTopics]);
+  }, [discipline, banca, examDate, squareLogo, rectangularLogo, profile?.hasEdital, profile?.editalTopics]);
+
+  const handleSquareLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSquareLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRectangularLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRectangularLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAnswerRecorded = (category: string, isCorrect: boolean, timeSpent: number, topicName?: string) => {
     const targetTopicName = topicName || currentTopic;
@@ -384,8 +430,12 @@ export default function App() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
           <div className="flex justify-between items-center h-16 sm:h-20">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-tr from-emerald-600 to-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10 shrink-0">
-                <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-tr from-emerald-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10 shrink-0 overflow-hidden">
+                {squareLogo ? (
+                  <img src={squareLogo} alt="Logo Quadrada" className="w-full h-full object-cover" />
+                ) : (
+                  <GraduationCap className="w-6 h-6 sm:w-8 sm:h-8" />
+                )}
               </div>
               <div className="min-w-0 flex flex-col justify-center">
                 <h1 className="font-display font-extrabold text-slate-950 text-sm sm:text-base md:text-xl tracking-tight leading-none bg-gradient-to-r from-slate-950 to-slate-800 bg-clip-text text-transparent truncate">
@@ -745,6 +795,53 @@ export default function App() {
                         <p className="text-slate-400 text-[10px] mt-1.5 leading-normal">
                           Como o edital oficial ainda não foi publicado, você pode estimar ou ajustar a data prevista da prova. O sistema irá redistribuir as metas do seu cronograma de forma inteligente e proporcional até o dia escolhido.
                         </p>
+                      </div>
+
+                      {/* Upload de Logos */}
+                      <div className="border-t border-slate-100 pt-5 mt-5">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                          <Image className="w-3.5 h-3.5 text-emerald-600" />
+                          Logotipo do Sistema (Aprova Professor)
+                        </h4>
+                        <p className="text-slate-400 text-[10.5px] mb-4 leading-normal">
+                          Adicione seu logotipo personalizado (quadrado ou ícone) para substituir o símbolo padrão da boina no cabeçalho do painel e no documento de impressão.
+                        </p>
+                        
+                        <div className="max-w-xs">
+                          {/* Logo Quadrada */}
+                          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex flex-col justify-between min-h-[140px]">
+                            <div>
+                              <span className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-0.5">Logo Quadrada (1:1)</span>
+                              <span className="block text-[9px] text-slate-400 mb-2">Recomendado: 120x120px (PNG ou JPG)</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-center justify-center flex-1">
+                              {squareLogo ? (
+                                <div className="relative group w-12 h-12 border border-slate-200 rounded-lg overflow-hidden bg-white">
+                                  <img src={squareLogo} alt="Logo Quadrada" className="w-full h-full object-cover" />
+                                  <button
+                                    onClick={(e) => { e.preventDefault(); setSquareLogo(""); }}
+                                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                                    title="Excluir"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="cursor-pointer border border-dashed border-slate-200 hover:border-emerald-400 bg-white hover:bg-emerald-50/20 rounded-xl p-3 flex flex-col items-center gap-1.5 transition-colors w-full">
+                                  <Image className="w-4 h-4 text-slate-400" />
+                                  <span className="text-[10px] font-bold text-slate-600 text-center">Selecionar Logo</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleSquareLogoUpload}
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       <div>

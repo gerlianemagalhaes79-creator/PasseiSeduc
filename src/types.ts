@@ -61,6 +61,8 @@ export interface UserProfile {
   editalFileName?: string;
   hasEdital?: boolean;
   editalTopics?: string[];
+  squareLogo?: string;
+  rectangularLogo?: string;
   history: {
     date: string;
     score: number;

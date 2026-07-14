@@ -866,9 +866,13 @@ export default function DashboardModule({
               </p>
             </div>
             
-            <div className="flex items-center gap-3 bg-white border border-emerald-100/85 rounded-xl p-3 shadow-xxs shrink-0">
-              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
-                <GraduationCap className="w-5 h-5" />
+            <div className="flex items-center gap-4 bg-white border border-emerald-100/85 rounded-2xl p-4 shadow-xxs shrink-0">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 overflow-hidden border border-emerald-100 shrink-0">
+                {profile.squareLogo ? (
+                  <img src={profile.squareLogo} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10" />
+                )}
               </div>
               <div>
                 <p className="text-emerald-800 text-[10px] uppercase tracking-wider font-bold">Idade & Perfil</p>
@@ -2681,8 +2685,12 @@ export default function DashboardModule({
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               {/* Educational Emblem */}
-              <div className="w-12 h-12 bg-emerald-50 border border-emerald-200/60 rounded-xl flex items-center justify-center text-emerald-700 shrink-0 shadow-xxs">
-                <GraduationCap className="w-6 h-6" />
+              <div className="w-20 h-20 bg-emerald-50 border border-emerald-200/60 rounded-2xl flex items-center justify-center text-emerald-700 shrink-0 shadow-xxs overflow-hidden">
+                {profile.squareLogo ? (
+                  <img src={profile.squareLogo} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <GraduationCap className="w-10 h-10" />
+                )}
               </div>
               <div>
                 <h1 className="text-base font-bold tracking-tight text-slate-900 font-sans">
