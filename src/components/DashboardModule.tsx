@@ -345,6 +345,21 @@ export default function DashboardModule({
   const [currentCalendarYear, setCurrentCalendarYear] = useState(2026);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(6); // 6 is July
 
+  // Auto-sync calendar view to studyStartDate when it changes
+  useEffect(() => {
+    if (profile.studyStartDate) {
+      try {
+        const d = new Date(profile.studyStartDate + "T12:00:00");
+        if (!isNaN(d.getTime())) {
+          setCurrentCalendarYear(d.getFullYear());
+          setCurrentCalendarMonth(d.getMonth());
+        }
+      } catch (e) {
+        console.error("Erro ao sincronizar calendario:", e);
+      }
+    }
+  }, [profile.studyStartDate]);
+
   // Pre-calculate the entire interleaved schedule for the active study period
   const examSchedule = useMemo(() => {
     if (!profile.examDate) return {};

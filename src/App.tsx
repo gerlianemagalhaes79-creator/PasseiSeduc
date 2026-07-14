@@ -891,6 +891,76 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* Datas e Carga Horária */}
+                      <div className="border-t border-slate-100 pt-4 mt-2 space-y-4">
+                        <h4 className="text-xs font-bold text-slate-700 flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-emerald-600" />
+                          Planejamento do Cronograma de Estudos
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                              Início dos Estudos
+                            </label>
+                            <input
+                              type="date"
+                              value={profile.studyStartDate || "2026-07-09"}
+                              onChange={(e) => {
+                                const newDate = e.target.value;
+                                setProfile(prev => ({
+                                  ...prev,
+                                  studyStartDate: newDate
+                                }));
+                              }}
+                              className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-xs text-slate-700 focus:outline-none font-medium"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                              Data da Prova
+                            </label>
+                            <input
+                              type="date"
+                              value={profile.examDate || "2026-09-26"}
+                              onChange={(e) => {
+                                const newDate = e.target.value;
+                                setProfile(prev => ({
+                                  ...prev,
+                                  examDate: newDate
+                                }));
+                              }}
+                              className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-xs text-slate-700 focus:outline-none font-medium"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                              Horas de Estudo / Dia
+                            </label>
+                            <select
+                              value={profile.studyHours || 3}
+                              onChange={(e) => {
+                                const newHours = parseInt(e.target.value);
+                                setProfile(prev => ({
+                                  ...prev,
+                                  studyHours: newHours
+                                }));
+                              }}
+                              className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-xs text-slate-700 focus:outline-none font-semibold"
+                            >
+                              <option value={1}>1 Hora</option>
+                              <option value={2}>2 Horas</option>
+                              <option value={3}>3 Horas</option>
+                              <option value={4}>4 Horas</option>
+                              <option value={5}>5 Horas</option>
+                              <option value={6}>6 Horas</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                           Instruções do Edital Vigente
@@ -906,9 +976,9 @@ export default function App() {
                       <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-xl p-4 flex gap-3">
                         <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="font-bold">Configurações Atualizadas!</h4>
+                          <h4 className="font-bold">Ajustes Salvos com Sucesso!</h4>
                           <p className="mt-0.5 leading-normal">
-                            O Professor Mentor agora está calibrado para simular o estilo de cobrança específico de <strong>{banca}</strong> com foco pedagógico em <strong>{discipline}</strong>.
+                            Seu cronograma de estudos, mentor e simulados foram totalmente recalibrados para focar na prova prevista para o dia <strong>{profile.examDate ? new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR') : "26/09/2026"}</strong>.
                           </p>
                         </div>
                       </div>
