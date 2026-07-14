@@ -42,7 +42,7 @@ async function generateContentWithRetry(
     contents: any;
     config?: any;
   },
-  maxRetries = 3
+  maxRetries = 1
 ): Promise<any> {
   let primaryModel = options.model || "gemini-3.5-flash";
   
@@ -95,7 +95,7 @@ async function generateContentWithRetry(
       }
 
       if (isRetriable && attempt <= maxRetries) {
-        const delay = attempt * 1500; // Exponential backoff: 1500ms, 3000ms, 4500ms...
+        const delay = attempt * 1000; // Fast retry delay
         console.warn(`[Gemini Call] ${primaryModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
         await sleep(delay);
         continue;
@@ -130,7 +130,7 @@ async function generateContentWithRetry(
       const isRetriable = !isPermanentClientError;
 
       if (isRetriable && attempt <= maxRetries) {
-        const delay = attempt * 1500;
+        const delay = attempt * 1000;
         console.warn(`[Gemini Call] Fallback ${fallbackModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
         await sleep(delay);
         continue;
@@ -789,7 +789,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.1-flash-lite",
+      model: "gemini-3.5-flash",
       contents: sanitizedContents,
       config: {
         systemInstruction: `Você é o "Professor Mentor", um tutor virtual inteligente e didático, focado na aprovação de docentes no Concurso da Rede Estadual do Ceará 2026.
@@ -898,7 +898,7 @@ Esse documento deve conter instruções como:
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.1-flash-lite",
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         systemInstruction: `Você é o maior especialista do Brasil em Engenharia Reversa de bancas de concurso público, com foco absoluto na banca ${banca}. Você produz relatórios técnicos impecáveis, práticos, repletos de exemplos e formatação em markdown de extrema elegância, perfeitos para treinar outras IAs ou instruir candidatos de alto nível que buscam passar no concurso Seduc-CE e prefeituras em 2026. Escreva em português de forma clara, objetiva e extremamente formal.`,
