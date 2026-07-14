@@ -6,7 +6,9 @@ import {
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut 
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";
 import { 
   doc, 
@@ -16,7 +18,8 @@ import {
   collection, 
   getDocs, 
   query, 
-  where 
+  where,
+  deleteDoc
 } from "firebase/firestore";
 import { 
   Mail, 
@@ -44,6 +47,92 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: "select_account",
+      });
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      const uid = user.uid;
+      const userEmail = user.email || "";
+
+      if (!userEmail) {
+        throw new Error("Não foi possível obter o e-mail da sua conta Google.");
+      }
+
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        onAuthSuccess({
+          uid,
+          email: userEmail,
+          role: data.role || "student",
+          status: data.status || "pending",
+        });
+      } else {
+        const q = query(collection(db, "users"), where("email", "==", userEmail.toLowerCase().trim()));
+        const querySnapshot = await getDocs(q);
+        
+        let initialRole = "student";
+        let initialStatus = "pending";
+        let preApprovedDocIdToDelete: string | null = null;
+
+        const isMasterAdmin = userEmail.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+        if (isMasterAdmin) {
+          initialRole = "admin";
+          initialStatus = "active";
+        } else if (!querySnapshot.empty) {
+          const preApprovedDoc = querySnapshot.docs[0];
+          const preApprovedData = preApprovedDoc.data();
+          initialRole = preApprovedData.role || "student";
+          initialStatus = preApprovedData.status || "active";
+          preApprovedDocIdToDelete = preApprovedDoc.id;
+        }
+
+        await setDoc(userDocRef, {
+          uid,
+          email: userEmail,
+          role: initialRole,
+          status: initialStatus,
+          createdAt: new Date().toISOString(),
+        });
+
+        if (preApprovedDocIdToDelete && preApprovedDocIdToDelete !== uid) {
+          try {
+            await deleteDoc(doc(db, "users", preApprovedDocIdToDelete));
+          } catch (deleteErr) {
+            console.error("Erro ao deletar documento pré-aprovado temporário:", deleteErr);
+          }
+        }
+
+        onAuthSuccess({
+          uid,
+          email: userEmail,
+          role: initialRole,
+          status: initialStatus,
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === "auth/popup-blocked") {
+        setError("O pop-up de login foi bloqueado pelo seu navegador. Por favor, permita pop-ups para este site.");
+      } else if (err.code === "auth/operation-not-allowed") {
+        setError("O login com Google não está ativo. Ative-o na aba Sign-in Method do Firebase Console.");
+      } else {
+        setError(`Erro ao autenticar com o Google: ${err.message || err.code || err}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +169,26 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             status: data.status || "pending",
           });
         } else {
-          // If Firestore document doesn't exist for some reason, create it
-          const isMasterAdmin = trimmedEmail.toLowerCase() === "gerlianemagalhaes79@gmail.com";
-          const defaultRole = isMasterAdmin ? "admin" : "student";
-          const defaultStatus = isMasterAdmin ? "active" : "pending";
+          // If Firestore document doesn't exist for some reason, check pre-approved lookup by email
+          const q = query(collection(db, "users"), where("email", "==", trimmedEmail.toLowerCase()));
+          const querySnapshot = await getDocs(q);
           
+          let defaultRole = "student";
+          let defaultStatus = "pending";
+          let preApprovedDocIdToDelete: string | null = null;
+
+          const isMasterAdmin = trimmedEmail.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+          if (isMasterAdmin) {
+            defaultRole = "admin";
+            defaultStatus = "active";
+          } else if (!querySnapshot.empty) {
+            const preApprovedDoc = querySnapshot.docs[0];
+            const preApprovedData = preApprovedDoc.data();
+            defaultRole = preApprovedData.role || "student";
+            defaultStatus = preApprovedData.status || "active";
+            preApprovedDocIdToDelete = preApprovedDoc.id;
+          }
+
           await setDoc(userDocRef, {
             uid,
             email: trimmedEmail,
@@ -92,6 +196,14 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             status: defaultStatus,
             createdAt: new Date().toISOString(),
           });
+
+          if (preApprovedDocIdToDelete && preApprovedDocIdToDelete !== uid) {
+            try {
+              await deleteDoc(doc(db, "users", preApprovedDocIdToDelete));
+            } catch (deleteErr) {
+              console.error(deleteErr);
+            }
+          }
 
           onAuthSuccess({
             uid,
@@ -137,8 +249,21 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
         // Determine initial role and status
         const isMasterAdmin = trimmedEmail.toLowerCase() === "gerlianemagalhaes79@gmail.com";
-        const initialRole = isMasterAdmin ? "admin" : "student";
-        const initialStatus = (isMasterAdmin || isKeyValid) ? "active" : "pending";
+        let initialRole = isMasterAdmin ? "admin" : "student";
+        let initialStatus = (isMasterAdmin || isKeyValid) ? "active" : "pending";
+        let preApprovedDocIdToDelete: string | null = null;
+
+        if (!isMasterAdmin && !isKeyValid) {
+          const q = query(collection(db, "users"), where("email", "==", trimmedEmail.toLowerCase()));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const preApprovedDoc = querySnapshot.docs[0];
+            const preApprovedData = preApprovedDoc.data();
+            initialRole = preApprovedData.role || "student";
+            initialStatus = preApprovedData.status || "active";
+            preApprovedDocIdToDelete = preApprovedDoc.id;
+          }
+        }
 
         // Save profile in Firestore
         await setDoc(doc(db, "users", uid), {
@@ -149,6 +274,14 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           createdAt: new Date().toISOString(),
           redeemedKey: isKeyValid ? trimmedKey : null,
         });
+
+        if (preApprovedDocIdToDelete && preApprovedDocIdToDelete !== uid) {
+          try {
+            await deleteDoc(doc(db, "users", preApprovedDocIdToDelete));
+          } catch (deleteErr) {
+            console.error(deleteErr);
+          }
+        }
 
         // Mark license key as redeemed if used
         if (isKeyValid && keyDocRef) {
@@ -243,6 +376,34 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             >
               Cadastrar
             </button>
+          </div>
+
+          {/* Google Sign-In Section */}
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-2xl border border-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+              ) : (
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.107C18.28 1.845 15.548 1 12.24 1c-6.075 0-11 4.925-11 11s4.925 11 11 11c6.338 0 10.55-4.46 10.55-10.74 0-.72-.08-1.27-.175-1.69h-10.375z"
+                  />
+                </svg>
+              )}
+              <span>Entrar com a Conta Google</span>
+            </button>
+
+            <div className="relative flex py-1 items-center font-bold text-xxs text-slate-400 uppercase tracking-widest justify-center">
+              <div className="flex-grow border-t border-slate-100"></div>
+              <span className="flex-shrink mx-3 bg-white text-slate-400">Ou utilize seu e-mail</span>
+              <div className="flex-grow border-t border-slate-100"></div>
+            </div>
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">

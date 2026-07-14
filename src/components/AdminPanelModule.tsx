@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
 import { 
   collection, 
   getDocs, 
   doc, 
+  getDoc,
   setDoc, 
   updateDoc, 
   deleteDoc, 
   query, 
-  orderBy 
+  orderBy,
+  where
 } from "firebase/firestore";
 import { 
   Users, 
@@ -58,6 +60,88 @@ export default function AdminPanelModule() {
   const [numKeysToGenerate, setNumKeysToGenerate] = useState<number>(1);
   const [generating, setGenerating] = useState<boolean>(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+
+  // User manual creation State
+  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [newEmail, setNewEmail] = useState<string>("");
+  const [newRole, setNewRole] = useState<string>("student");
+  const [newStatus, setNewStatus] = useState<string>("active");
+  const [addingUser, setAddingUser] = useState<boolean>(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState<string | null>(null);
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddingUser(true);
+    setAddError(null);
+    setAddSuccess(null);
+
+    const emailClean = newEmail.trim().toLowerCase();
+    if (!emailClean) {
+      setAddError("E-mail é obrigatório.");
+      setAddingUser(false);
+      return;
+    }
+
+    try {
+      const userRef = doc(db, "users", emailClean);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        setAddError("Este usuário já está cadastrado.");
+        setAddingUser(false);
+        return;
+      }
+
+      const q = query(collection(db, "users"), where("email", "==", emailClean));
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        setAddError("Este usuário já está cadastrado.");
+        setAddingUser(false);
+        return;
+      }
+
+      await setDoc(userRef, {
+        uid: emailClean,
+        email: emailClean,
+        role: newRole,
+        status: newStatus,
+        createdAt: new Date().toISOString(),
+      });
+
+      setAddSuccess("Usuário pré-aprovado com sucesso! Ele já pode acessar o sistema.");
+      setNewEmail("");
+      setNewRole("student");
+      setNewStatus("active");
+      
+      fetchUsers();
+    } catch (err: any) {
+      console.error(err);
+      setAddError(`Erro ao adicionar usuário: ${err.message || err}`);
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (uid: string, email: string) => {
+    if (email.toLowerCase() === "gerlianemagalhaes79@gmail.com") {
+      alert("A conta administradora master não pode ser excluída.");
+      return;
+    }
+    const currentUserEmail = auth.currentUser?.email;
+    if (currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase()) {
+      alert("Você não pode excluir sua própria conta conectada.");
+      return;
+    }
+    if (!window.confirm(`Deseja realmente excluir o usuário ${email}?`)) return;
+    try {
+      await deleteDoc(doc(db, "users", uid));
+      setUsers(prev => prev.filter(u => u.uid !== uid));
+    } catch (err: any) {
+      console.error("Error deleting user:", err);
+      alert(`Erro ao excluir usuário: ${err.message || err}`);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -233,7 +317,14 @@ export default function AdminPanelModule() {
             Aqui você gerencia quem tem acesso ao sistema e gera licenças de venda para seus alunos.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold rounded-xl text-white cursor-pointer transition-all shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {showAddForm ? "Fechar Cadastro" : "Cadastrar Usuário"}
+          </button>
           <button
             onClick={() => { fetchUsers(); fetchKeys(); }}
             className="flex items-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-750 cursor-pointer transition-all"
@@ -278,6 +369,101 @@ export default function AdminPanelModule() {
           </div>
         </div>
       </div>
+
+      {/* Manual User Creation Form */}
+      {showAddForm && (
+        <div className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <Users className="w-4 h-4 text-emerald-600" />
+                Cadastrar Aluno / Professor Manualmente
+              </h3>
+              <p className="text-slate-500 text-xxs mt-0.5">
+                Ao cadastrar o usuário com status "Ativo", ele poderá fazer login instantaneamente via Google ou com e-mail cadastrado.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAddForm(false)}
+              className="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-lg hover:bg-slate-50"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="md:col-span-2">
+              <label className="block text-xxs font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                E-mail do Usuário
+              </label>
+              <input
+                type="email"
+                placeholder="usuario@email.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-medium"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xxs font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                Função / Role
+              </label>
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+              >
+                <option value="student">Aluno (Padrão)</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xxs font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                Status de Acesso
+              </label>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+              >
+                <option value="active">Ativo (Acesso Liberado)</option>
+                <option value="pending">Pendente (Bloqueado)</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-4 flex items-center justify-between gap-4 pt-2 border-t border-slate-50">
+              <div className="flex-1">
+                {addError && (
+                  <p className="text-xxs text-rose-600 font-bold">{addError}</p>
+                )}
+                {addSuccess && (
+                  <p className="text-xxs text-emerald-600 font-bold">{addSuccess}</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={addingUser}
+                className="flex items-center gap-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl cursor-pointer transition-all disabled:opacity-50 shadow-xs shrink-0"
+              >
+                {addingUser ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Confirmar Cadastro
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Tabs and Search */}
       <div className="bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 space-y-4">
@@ -376,11 +562,11 @@ export default function AdminPanelModule() {
                             "Nenhuma (Manual/Admin)"
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right space-x-1.5">
+                        <td className="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
                           {/* Toggle role admin/student */}
                           <button
                             onClick={() => handleToggleRole(user.uid, user.role)}
-                            className="px-2 py-1 bg-slate-50 hover:bg-slate-150 rounded-lg text-[10px] font-bold text-slate-600 transition-all cursor-pointer"
+                            className="px-2 py-1 bg-slate-50 hover:bg-slate-150 rounded-lg text-[10px] font-bold text-slate-600 transition-all cursor-pointer inline-flex items-center"
                           >
                             Tornar {user.role === "admin" ? "Aluno" : "Admin"}
                           </button>
@@ -405,6 +591,15 @@ export default function AdminPanelModule() {
                                 Liberar
                               </>
                             )}
+                          </button>
+
+                          {/* Delete User */}
+                          <button
+                            onClick={() => handleDeleteUser(user.uid, user.email)}
+                            className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 rounded-lg transition-all cursor-pointer inline-flex items-center"
+                            title="Excluir Usuário"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>

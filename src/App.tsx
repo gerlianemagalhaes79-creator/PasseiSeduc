@@ -15,7 +15,7 @@ import PendingScreen from "./components/PendingScreen";
 import AdminPanelModule from "./components/AdminPanelModule";
 import { auth, db } from "./lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, query, where, deleteDoc } from "firebase/firestore";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -63,8 +63,24 @@ export default function App() {
             });
           } else {
             const isMasterAdmin = firebaseUser.email?.toLowerCase() === "gerlianemagalhaes79@gmail.com";
-            const defaultRole = isMasterAdmin ? "admin" : "student";
-            const defaultStatus = isMasterAdmin ? "active" : "pending";
+            let defaultRole = isMasterAdmin ? "admin" : "student";
+            let defaultStatus = isMasterAdmin ? "active" : "pending";
+            let preApprovedDocIdToDelete: string | null = null;
+
+            if (firebaseUser.email && !isMasterAdmin) {
+              const q = query(
+                collection(db, "users"),
+                where("email", "==", firebaseUser.email.toLowerCase().trim())
+              );
+              const querySnapshot = await getDocs(q);
+              if (!querySnapshot.empty) {
+                const preApprovedDoc = querySnapshot.docs[0];
+                const preApprovedData = preApprovedDoc.data();
+                defaultRole = preApprovedData.role || "student";
+                defaultStatus = preApprovedData.status || "active";
+                preApprovedDocIdToDelete = preApprovedDoc.id;
+              }
+            }
             
             await setDoc(userDocRef, {
               uid: firebaseUser.uid,
@@ -73,6 +89,14 @@ export default function App() {
               status: defaultStatus,
               createdAt: new Date().toISOString(),
             });
+
+            if (preApprovedDocIdToDelete && preApprovedDocIdToDelete !== firebaseUser.uid) {
+              try {
+                await deleteDoc(doc(db, "users", preApprovedDocIdToDelete));
+              } catch (deleteErr) {
+                console.error("Error deleting preapproved temporary document:", deleteErr);
+              }
+            }
             
             setUser({
               uid: firebaseUser.uid,
