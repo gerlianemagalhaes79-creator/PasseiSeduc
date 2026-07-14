@@ -156,6 +156,16 @@ export default function App() {
     return "Matemática";
   });
 
+  const [examDate, setExamDate] = useState<string>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        return JSON.parse(saved).examDate || "2026-09-26";
+      } catch (e) {}
+    }
+    return "2026-09-26";
+  });
+
   const [editalText, setEditalText] = useState<string>(
     "Edital oficial SEDUC-CE de 2026. Prioriza LDB atualizada, Plano Nacional de Educação, Estatuto do Magistério do Ceará, Didática Geral, metodologias ativas e avaliação formativa."
   );
@@ -174,7 +184,8 @@ export default function App() {
     setProfile(prev => ({
       ...prev,
       discipline,
-      banca
+      banca,
+      examDate
     }));
 
     // Generate discipline topics dynamically
@@ -226,7 +237,7 @@ export default function App() {
     }
 
     setTopics(freshList);
-  }, [discipline, banca, profile?.hasEdital, profile?.editalTopics]);
+  }, [discipline, banca, examDate, profile?.hasEdital, profile?.editalTopics]);
 
   const handleAnswerRecorded = (category: string, isCorrect: boolean, timeSpent: number, topicName?: string) => {
     const targetTopicName = topicName || currentTopic;
@@ -719,6 +730,21 @@ export default function App() {
                             <option value="Geral / Outros">Geral / Outros</option>
                           </select>
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                          Data Prevista da Prova (Edital não publicado)
+                        </label>
+                        <input
+                          type="date"
+                          value={examDate}
+                          onChange={(e) => setExamDate(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
+                        />
+                        <p className="text-slate-400 text-[10px] mt-1.5 leading-normal">
+                          Como o edital oficial ainda não foi publicado, você pode estimar ou ajustar a data prevista da prova. O sistema irá redistribuir as metas do seu cronograma de forma inteligente e proporcional até o dia escolhido.
+                        </p>
                       </div>
 
                       <div>

@@ -2676,104 +2676,98 @@ export default function DashboardModule({
           }
         `}} />
 
-        {/* Official Header */}
-        <div className="border-b-4 border-slate-900 pb-5 mb-5">
+        {/* Official Header - Elegant, Minimalist, Professional */}
+        <div className="border-b-2 border-slate-200 pb-5 mb-5">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               {/* Educational Emblem */}
-              <div className="w-14 h-14 bg-slate-900 text-white flex flex-col items-center justify-center rounded-xl font-serif font-black text-xl border-2 border-slate-800 shrink-0 shadow-sm">
-                <span>IA</span>
-                <span className="text-[9px] font-sans font-bold tracking-widest mt-[-4px] text-emerald-400">APROVA</span>
+              <div className="w-12 h-12 bg-emerald-50 border border-emerald-200/60 rounded-xl flex items-center justify-center text-emerald-700 shrink-0 shadow-xxs">
+                <GraduationCap className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-lg font-extrabold tracking-tight text-slate-950 uppercase font-mono">
-                  MINISTÉRIO DA APROVAÇÃO • SEDUC-CE 2026
+                <h1 className="text-base font-bold tracking-tight text-slate-900 font-sans">
+                  Aprova Professor • SEDUC CE 2026
                 </h1>
-                <p className="text-xs font-semibold text-slate-700">
+                <p className="text-xs font-semibold text-slate-600">
                   Diretoria de Planejamento de Metas • Cronograma de Estudos Individualizado
                 </p>
-                <p className="text-[10px] text-slate-500 font-medium">
+                <p className="text-[10px] text-slate-400 font-medium">
                   Documento Técnico de Preparação de Alto Rendimento • Baseado na Recorrência FUNECE
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <span className="inline-block text-[10px] font-bold font-mono bg-slate-950 text-white px-3 py-1 rounded-md uppercase tracking-wider">
+              <span className="inline-block text-[10px] font-bold font-sans bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1 rounded-md uppercase tracking-wider">
                 {profile.examDate 
                   ? `${new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')} - ${new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '')}`.toUpperCase()
                   : "JULHO DE 2026"
                 }
               </span>
-              <p className="text-[9px] text-slate-500 font-mono mt-1">Ref: FUNECE/SEDUC</p>
+              <p className="text-[9px] text-slate-400 font-mono mt-1">Ref: FUNECE/SEDUC</p>
             </div>
           </div>
         </div>
 
         {/* Candidate & Plan Metadata Grid */}
-        <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl mb-6 text-xs text-slate-800">
+        <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50/50 border border-slate-200 rounded-2xl mb-5 text-xs text-slate-800">
           <div>
-            <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block font-mono">Estudante / Candidato(a)</span>
-            <strong className="text-slate-950 block text-[13px] font-sans mt-0.5">{profile.name || "Candidato(a) de Elite"}</strong>
-            <span className="text-[10px] text-slate-600 block">
+            <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400 block font-sans">Estudante / Candidato(a)</span>
+            <strong className="text-slate-800 block text-[13px] font-sans mt-0.5">{profile.name || "Candidato(a) de Elite"}</strong>
+            <span className="text-[10px] text-slate-500 block">
               {profile.level === "advanced" ? "Nível Avançado" : profile.level === "intermediate" ? "Nível Intermediário" : "Nível Iniciante"}
             </span>
           </div>
           <div>
-            <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block font-mono">Cargo & Disciplina Alvo</span>
-            <strong className="text-slate-950 block text-[13px] font-sans mt-0.5">Professor Seduc-CE</strong>
-            <span className="text-[10px] font-semibold text-slate-700 block">{profile.discipline}</span>
+            <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400 block font-sans">Cargo & Disciplina Alvo</span>
+            <strong className="text-slate-800 block text-[13px] font-sans mt-0.5">Professor Seduc-CE</strong>
+            <span className="text-[10px] font-semibold text-slate-600 block">{profile.discipline}</span>
           </div>
           <div>
-            <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block font-mono">Metas & Planejamento</span>
-            <strong className="text-slate-950 block text-[13px] font-sans mt-0.5">{profile.studyHours || 3} Horas Diárias</strong>
-            <span className="text-[10px] text-slate-600 block">Estudo Teórico + Questões Diárias</span>
+            <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400 block font-sans">Metas & Planejamento</span>
+            <strong className="text-slate-800 block text-[13px] font-sans mt-0.5">{profile.studyHours || 3} Horas Diárias</strong>
+            <span className="text-[10px] text-slate-500 block">Estudo Teórico + Questões Diárias</span>
           </div>
         </div>
 
-        {/* Methodological Guidance Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6 text-[10px] text-slate-700 leading-relaxed">
-          <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1.5">
-              💡 METODOLOGIA ATIVA (ENGENHARIA REVERSA)
+        {/* Methodological & General Guidance Grid - Compact, 3-Column, Elegant & Minimalist */}
+        <div className="grid grid-cols-3 gap-3 mb-5 text-[9px] text-slate-600 leading-relaxed page-break-inside-avoid">
+          <div className="p-2.5 border border-slate-200/80 rounded-xl bg-slate-50/30">
+            <h4 className="font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1 font-sans text-[9.5px] mb-1">
+              💡 Metodologia Ativa
             </h4>
-            <p>
-              1. <strong>Estudo de Tópicos:</strong> Use o botão "O que estudar?" no sistema antes de iniciar.<br />
-              2. <strong>Foco Teórico (20%):</strong> Resumos rápidos e conceitos-chave da bibliografia.<br />
-              3. <strong>Fixação (80%):</strong> Resolva pelo menos 15 a 20 questões da FUNECE sobre o assunto do dia.
+            <p className="text-slate-500">
+              Estudo teórico rápido (20%) seguido de resolução intensiva (80%) de questões FUNECE. Use o simulador para autoavaliação contínua.
             </p>
           </div>
-          <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1.5">
-              🔄 SISTEMA DE REVISÃO E CONTROLE
+          <div className="p-2.5 border border-slate-200/80 rounded-xl bg-slate-50/30">
+            <h4 className="font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1 font-sans text-[9.5px] mb-1">
+              🔄 Revisão e Controle
             </h4>
-            <p>
-              • <strong>Legenda de Progresso:</strong> Marque <strong>T</strong> (Teoria lida), <strong>Q</strong> (Questões feitas) e <strong>R</strong> (Erros revisados) na coluna final.<br />
-              • <strong>Revisão de 24h:</strong> No início de cada dia de estudos, revise as anotações do dia anterior por 10 minutos.
+            <p className="text-slate-500">
+              Marque <strong>T</strong> (Teoria), <strong>Q</strong> (Questões) e <strong>R</strong> (Erros) ao lado de cada dia estudado. Revise anotações anteriores por 10min diários.
             </p>
           </div>
-        </div>
-
-        {/* General Orientation Header Box */}
-        <div className="p-3 border-2 border-slate-900 rounded-xl bg-slate-50/25 mb-5 text-[10px] text-slate-800 leading-relaxed page-break-inside-avoid">
-          <h4 className="font-extrabold text-slate-950 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1">
-            📌 ORIENTAÇÃO GERAL DO CRONOGRAMA
-          </h4>
-          <p>
-            Execute o estudo programático do edital de forma sequencial. Para cada conteúdo programático detalhado listado no cronograma diário abaixo, estude a teoria correspondente (foco em resumos, esquemas e conceitos essenciais da bibliografia) e resolva ativamente blocos de questões da banca <strong>FUNECE</strong> para fixação prática. Marque seu progresso (<strong>T</strong>, <strong>Q</strong>, <strong>R</strong>) no final de cada dia estudado.
-          </p>
+          <div className="p-2.5 border border-slate-200/80 rounded-xl bg-slate-50/30">
+            <h4 className="font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1 font-sans text-[9.5px] mb-1">
+              📌 Orientação Geral
+            </h4>
+            <p className="text-slate-500">
+              Siga a sequência proposta. Estude a teoria correspondente na bibliografia essencial e resolva ativamente blocos de exercícios da FUNECE.
+            </p>
+          </div>
         </div>
 
         {/* Detailed Table */}
-        <div className="overflow-hidden border border-slate-300 rounded-xl">
+        <div className="overflow-hidden border border-slate-200 rounded-xl">
           <table className="w-full border-collapse text-[10px] text-left">
             <thead>
-              <tr className="bg-slate-900 text-white font-mono uppercase tracking-wider text-[9px] border-b border-slate-900">
-                <th className="p-2.5 font-bold w-12 text-center">Data</th>
-                <th className="p-2.5 font-bold w-24">Semana</th>
-                <th className="p-2.5 font-bold w-36">Área / Disciplina</th>
-                <th className="p-2.5 font-bold">Conteúdo Programático Detalhado</th>
-                <th className="p-2.5 font-bold w-20 text-center">Horário</th>
-                <th className="p-2.5 font-bold w-20 text-center">Progresso</th>
+              <tr className="bg-slate-100 text-slate-800 font-sans uppercase tracking-wider text-[9px] border-b border-slate-200">
+                <th className="p-2.5 font-bold w-12 text-slate-700 text-center">Data</th>
+                <th className="p-2.5 font-bold w-24 text-slate-700">Semana</th>
+                <th className="p-2.5 font-bold w-40 text-slate-700">Área / Disciplina</th>
+                <th className="p-2.5 font-bold text-slate-700">Conteúdo Programático Detalhado</th>
+                <th className="p-2.5 font-bold w-20 text-slate-700 text-center">Horário</th>
+                <th className="p-2.5 font-bold w-20 text-slate-700 text-center">Progresso</th>
               </tr>
             </thead>
             <tbody>
@@ -2821,28 +2815,46 @@ export default function DashboardModule({
                     isExam: (dateTopic as any).isExam
                   } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
 
-                  const cleanInfo = dateTopic ? {
-                    subject: "Estudo Intercalado",
-                    subtopic: dateTopic.desc
-                  } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "Livre / Revisão", subtopic: "Folga programada, simulados ou revisão de pontos fracos" });
                   const isExam = scheduleItem && (scheduleItem as any).isExam;
 
-                  let badgeClass = "border border-slate-300 bg-slate-50 text-slate-800";
-                  if (scheduleItem?.color) {
-                    if (scheduleItem.color.includes("indigo")) badgeClass = "border border-indigo-200 bg-indigo-50 text-indigo-900 font-bold";
-                    else if (scheduleItem.color.includes("emerald")) badgeClass = "border border-emerald-200 bg-emerald-50 text-emerald-900 font-bold";
-                    else if (scheduleItem.color.includes("purple")) badgeClass = "border border-purple-200 bg-purple-50 text-purple-900 font-bold";
-                    else if (scheduleItem.color.includes("amber")) badgeClass = "border border-amber-200 bg-amber-50 text-amber-900 font-bold";
+                  let subjectVal = "Livre / Revisão";
+                  let subtopicVal = "Folga programada, simulados ou revisão de pontos fracos";
+
+                  if (isExam) {
+                    subjectVal = "SEDUC CE";
+                    subtopicVal = "GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026";
+                  } else if (scheduleItem) {
+                    if (scheduleItem.desc && scheduleItem.desc.includes(" // ")) {
+                      const parts = scheduleItem.desc.split(" // ");
+                      subjectVal = parts[0].trim();
+                      subtopicVal = parts[1].trim();
+                    } else if (scheduleItem.desc) {
+                      if (scheduleItem.desc.toLowerCase().includes("simulado")) {
+                        subjectVal = "Simulado Geral";
+                        subtopicVal = scheduleItem.desc;
+                      } else if (scheduleItem.desc.toLowerCase().includes("revisão") || scheduleItem.desc.toLowerCase().includes("descanso")) {
+                        subjectVal = "Revisão / Descanso";
+                        subtopicVal = scheduleItem.desc;
+                      } else {
+                        subjectVal = "Geral";
+                        subtopicVal = scheduleItem.desc;
+                      }
+                    }
                   }
+
+                  const cleanInfo = {
+                    subject: subjectVal,
+                    subtopic: subtopicVal
+                  };
 
                   const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
 
                   return (
-                    <tr key={idx} className={`border-b border-slate-200 ${isExam ? "bg-rose-50" : dayNum % 2 === 0 ? "bg-slate-50/40" : "bg-white"}`}>
-                      <td className="p-2.5 border-r border-slate-200 font-mono text-center font-bold text-slate-950 text-xs">
+                    <tr key={idx} className={`border-b border-slate-150 ${isExam ? "bg-rose-50" : dayNum % 2 === 0 ? "bg-slate-50/20" : "bg-white"}`}>
+                      <td className="p-2.5 border-r border-slate-200 font-mono text-center font-bold text-slate-800 text-xs">
                         {formattedDate}
                       </td>
-                      <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-700">
+                      <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-600">
                         {weekdayName}
                       </td>
                       <td className="p-2.5 border-r border-slate-200">
@@ -2851,28 +2863,59 @@ export default function DashboardModule({
                             🏁 CONCURSO
                           </span>
                         ) : scheduleItem ? (
-                          <span className={`inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-semibold ${badgeClass}`}>
-                            {cleanInfo.subject}
-                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {cleanInfo.subject.split(" + ").map((subj, subIdx) => {
+                              // Determine color based on subject name
+                              let tagClass = "border border-slate-200 bg-slate-50 text-slate-600";
+                              const lowerSubj = subj.toLowerCase();
+                              if (lowerSubj.includes("português") || lowerSubj.includes("portugues")) {
+                                tagClass = "border border-sky-200 bg-sky-50 text-sky-800 font-bold";
+                              } else if (lowerSubj.includes("didática") || lowerSubj.includes("didatica")) {
+                                tagClass = "border border-emerald-250 bg-emerald-50 text-emerald-800 font-bold";
+                              } else if (lowerSubj.includes("específico") || lowerSubj.includes("específica") || lowerSubj.includes("especifico") || lowerSubj.includes("especifica")) {
+                                tagClass = "border border-amber-200 bg-amber-50 text-amber-800 font-bold";
+                              } else if (lowerSubj.includes("legislação") || lowerSubj.includes("legislacao")) {
+                                tagClass = "border border-indigo-200 bg-indigo-50 text-indigo-800 font-bold";
+                              } else if (lowerSubj.includes("ceará") || lowerSubj.includes("ceara") || lowerSubj.includes("indicadores")) {
+                                tagClass = "border border-purple-200 bg-purple-50 text-purple-800 font-bold";
+                              }
+                              return (
+                                <span key={subIdx} className={`inline-block px-1.5 py-0.5 text-[8px] rounded-md uppercase tracking-tight ${tagClass}`}>
+                                  {subj.trim()}
+                                </span>
+                              );
+                            })}
+                          </div>
                         ) : (
-                          <span className="inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-medium border border-slate-200 bg-slate-100 text-slate-500">
+                          <span className="inline-block px-2 py-0.5 text-[8px] rounded-md uppercase tracking-tight font-medium border border-slate-200 bg-slate-100 text-slate-500">
                             Livre
                           </span>
                         )}
                       </td>
                       <td className="p-2.5 border-r border-slate-200 leading-normal">
-                        <div className="font-bold text-slate-950 text-xs">
-                          {isExam ? "GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026" : cleanInfo.subtopic}
+                        <div className="text-slate-900 text-xs font-semibold">
+                          {isExam ? (
+                            <span className="font-bold text-rose-700">GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026</span>
+                          ) : (
+                            <div className="space-y-1">
+                              {cleanInfo.subtopic.split(" + ").map((sub, sIdx) => (
+                                <div key={sIdx} className="flex items-start gap-1 text-[10.5px] font-medium text-slate-600">
+                                  <span className="text-emerald-500 font-bold shrink-0">•</span>
+                                  <span>{sub}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td className="p-2.5 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-700 font-medium">
+                      <td className="p-2.5 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-600 font-medium">
                         {scheduleItem ? scheduleItem.time : "Meta Livre"}
                       </td>
                       <td className="p-2.5 text-center text-[10px] text-slate-400 font-mono font-bold">
                         <div className="flex justify-center gap-1">
-                          <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">T</span>
-                          <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">Q</span>
-                          <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">R</span>
+                          <span className="border border-slate-200 w-5 h-5 flex items-center justify-center text-[8px] text-slate-500 rounded bg-white">T</span>
+                          <span className="border border-slate-200 w-5 h-5 flex items-center justify-center text-[8px] text-slate-500 rounded bg-white">Q</span>
+                          <span className="border border-slate-200 w-5 h-5 flex items-center justify-center text-[8px] text-slate-500 rounded bg-white">R</span>
                         </div>
                       </td>
                     </tr>
@@ -2884,20 +2927,20 @@ export default function DashboardModule({
         </div>
 
         {/* Commitment Agreement Section */}
-        <div className="mt-6 p-4 border-2 border-slate-900 border-dashed rounded-2xl bg-white page-break-inside-avoid">
-          <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-950 font-mono mb-2">
+        <div className="mt-6 p-4 border border-slate-300 border-dashed rounded-2xl bg-white page-break-inside-avoid">
+          <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 font-mono mb-2">
             🤝 COMPROMISSO DE HONRA COM A MINHA CARREIRA
           </h4>
-          <p className="text-[10px] text-slate-700 leading-relaxed italic">
+          <p className="text-[10px] text-slate-600 leading-relaxed italic">
             "Eu assumo o compromisso de seguir este planejamento com determinação, ética e foco. Cada dia concluído me aproxima de vestir o crachá de servidor público do Estado do Ceará e fazer a diferença na educação pública de nossos jovens."
           </p>
           <div className="mt-5 flex justify-between items-end text-xs pt-2">
             <div>
-              <p className="text-[9px] text-slate-500 font-mono">Assinado em {new Date().toLocaleDateString('pt-BR')}</p>
+              <p className="text-[9px] text-slate-400 font-mono">Assinado em {new Date().toLocaleDateString('pt-BR')}</p>
             </div>
             <div className="text-right w-80">
-              <div className="border-b border-slate-900 w-full mb-1 h-8"></div>
-              <p className="text-[9px] uppercase tracking-wide font-bold text-slate-600 font-mono">
+              <div className="border-b border-slate-300 w-full mb-1 h-8"></div>
+              <p className="text-[9px] uppercase tracking-wide font-bold text-slate-500 font-mono">
                 Assinatura do(a) Futuro(a) Professor(a) Seduc-CE
               </p>
             </div>
@@ -2906,7 +2949,7 @@ export default function DashboardModule({
 
         {/* Document Footer */}
         <div className="mt-8 text-center text-[9px] text-slate-400 border-t border-slate-200 pt-4 font-mono font-bold flex justify-between items-center">
-          <span>SISTEMA DE PREPARAÇÃO INTELIGENTE • IA APROVA</span>
+          <span>SISTEMA DE PREPARAÇÃO INTELIGENTE • APROVA PROFESSOR SEDUC CE 2026</span>
           <span>ESTADO DO CEARÁ • SEDUC-CE 2026</span>
           <span>PÁGINA 1 DE 1</span>
         </div>
