@@ -42,7 +42,7 @@ async function generateContentWithRetry(
     contents: any;
     config?: any;
   },
-  maxRetries = 2
+  maxRetries = 3
 ): Promise<any> {
   let primaryModel = options.model || "gemini-3.5-flash";
   
@@ -68,15 +68,6 @@ async function generateContentWithRetry(
       });
       return response;
     } catch (err: any) {
-      const isTransient = err.status === 503 || 
-                          err.statusCode === 503 || 
-                          (err.message && err.message.includes("503")) ||
-                          (err.message && err.message.includes("high demand")) ||
-                          err.status === 429 ||
-                          err.statusCode === 429 ||
-                          (err.message && err.message.includes("429")) ||
-                          (err.message && err.message.includes("RESOURCE_EXHAUSTED"));
-
       const isQuotaExceeded = err.status === 429 || 
                               err.statusCode === 429 || 
                               (err.message && (
@@ -85,15 +76,27 @@ async function generateContentWithRetry(
                                 err.message.includes("limit")
                               ));
 
+      const isPermanentClientError = err.status === 400 || 
+                                     err.statusCode === 400 || 
+                                     (err.message && err.message.includes("400")) ||
+                                     err.status === 401 ||
+                                     err.statusCode === 401 ||
+                                     (err.message && err.message.includes("401")) ||
+                                     err.status === 403 ||
+                                     err.statusCode === 403 ||
+                                     (err.message && err.message.includes("403"));
+
+      const isRetriable = !isPermanentClientError;
+
       if (isQuotaExceeded && primaryModel === "gemini-3.5-flash") {
         console.warn(`[Gemini Call] Detected gemini-3.5-flash quota exhaustion/429. Flagging as exhausted for session to bypass future retries.`);
         isGemini35Exhausted = true;
         break; // Stop retrying primaryModel and transition to fallbackModel immediately
       }
 
-      if (isTransient && attempt <= maxRetries) {
-        const delay = attempt * 1000;
-        console.warn(`[Gemini Call] ${primaryModel} failed with code ${err.status || '503'} (${err.message || 'Error'}). Retrying in ${delay}ms...`);
+      if (isRetriable && attempt <= maxRetries) {
+        const delay = attempt * 1500; // Exponential backoff: 1500ms, 3000ms, 4500ms...
+        console.warn(`[Gemini Call] ${primaryModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
         await sleep(delay);
         continue;
       }
@@ -114,18 +117,21 @@ async function generateContentWithRetry(
       });
       return response;
     } catch (err: any) {
-      const isTransient = err.status === 503 || 
-                          err.statusCode === 503 || 
-                          (err.message && err.message.includes("503")) ||
-                          (err.message && err.message.includes("high demand")) ||
-                          err.status === 429 ||
-                          err.statusCode === 429 ||
-                          (err.message && err.message.includes("429")) ||
-                          (err.message && err.message.includes("RESOURCE_EXHAUSTED"));
+      const isPermanentClientError = err.status === 400 || 
+                                     err.statusCode === 400 || 
+                                     (err.message && err.message.includes("400")) ||
+                                     err.status === 401 ||
+                                     err.statusCode === 401 ||
+                                     (err.message && err.message.includes("401")) ||
+                                     err.status === 403 ||
+                                     err.statusCode === 403 ||
+                                     (err.message && err.message.includes("403"));
 
-      if (isTransient && attempt <= maxRetries) {
-        const delay = attempt * 1000;
-        console.warn(`[Gemini Call] Fallback ${fallbackModel} failed with ${err.status || '503'}. Retrying in ${delay}ms...`);
+      const isRetriable = !isPermanentClientError;
+
+      if (isRetriable && attempt <= maxRetries) {
+        const delay = attempt * 1500;
+        console.warn(`[Gemini Call] Fallback ${fallbackModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
         await sleep(delay);
         continue;
       }
