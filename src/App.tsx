@@ -10,6 +10,12 @@ import OnboardingModule from "./components/OnboardingModule";
 import DnaModule from "./components/DnaModule";
 import FlashcardsModal from "./components/FlashcardsModal";
 import FlashcardsModule from "./components/FlashcardsModule";
+import AuthScreen from "./components/AuthScreen";
+import PendingScreen from "./components/PendingScreen";
+import AdminPanelModule from "./components/AdminPanelModule";
+import { auth, db } from "./lib/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -28,11 +34,71 @@ import {
   CheckSquare,
   ChevronDown,
   Calendar,
-  Layers
+  Layers,
+  Users,
+  LogOut,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function App() {
+  // Auth state
+  const [user, setUser] = useState<{ uid: string; email: string; role: string; status: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          const userSnap = await getDoc(userDocRef);
+          
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              role: data.role || "student",
+              status: data.status || "pending",
+            });
+          } else {
+            const isMasterAdmin = firebaseUser.email?.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+            const defaultRole = isMasterAdmin ? "admin" : "student";
+            const defaultStatus = isMasterAdmin ? "active" : "pending";
+            
+            await setDoc(userDocRef, {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              role: defaultRole,
+              status: defaultStatus,
+              createdAt: new Date().toISOString(),
+            });
+            
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              role: defaultRole,
+              status: defaultStatus,
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching user data from Firestore:", err);
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || "",
+            role: "student",
+            status: "pending",
+          });
+        }
+      } else {
+        setUser(null);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Application Onboarding State
   const [onboarded, setOnboarded] = useState<boolean>(() => {
     return localStorage.getItem("ia_aprova_onboarded") === "true";
@@ -327,6 +393,43 @@ export default function App() {
     }
   };
 
+  // --- AUTH CHECKING ---
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
+        <p className="text-xs text-slate-500 font-semibold">Carregando plataforma...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <AuthScreen 
+        onAuthSuccess={(userData) => {
+          setUser(userData);
+        }} 
+      />
+    );
+  }
+
+  const isMasterAdmin = user.email.toLowerCase() === "gerlianemagalhaes79@gmail.com";
+  const isApproved = user.status === "active" || isMasterAdmin;
+
+  if (!isApproved) {
+    return (
+      <PendingScreen 
+        user={user} 
+        onActivationSuccess={() => {
+          setUser(prev => prev ? { ...prev, status: "active" } : null);
+        }}
+        onLogout={() => {
+          setUser(null);
+        }}
+      />
+    );
+  }
+
   // If not onboarded, show Onboarding pre-registration screen
   if (!onboarded) {
     return (
@@ -408,25 +511,42 @@ export default function App() {
               </div>
 
               {/* Redesigned Sleek Primary Dropdown View Switcher */}
-              <div className="relative">
-                <select
-                  id="module-switcher"
-                  value={activeModule}
-                  onChange={(e) => setActiveModule(e.target.value)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] sm:text-xs px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border-none shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all appearance-none pr-8 sm:pr-10"
-                >
-                  <option value="dashboard" className="text-slate-800 bg-white font-semibold">📊 Painel</option>
-                  <option value="schedule" className="text-slate-800 bg-white font-semibold">📅 Cronograma</option>
-                  <option value="syllabus" className="text-slate-800 bg-white font-semibold">📖 Guia Edital</option>
-                  <option value="simulator" className="text-slate-800 bg-white font-semibold">📝 Simulador</option>
-                  <option value="flashcards" className="text-slate-800 bg-white font-semibold">⚡ Flashcards</option>
-                  <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Mentor</option>
-                  <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA Banca</option>
-                  <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustes</option>
-                </select>
-                <div className="absolute inset-y-0 right-2 sm:right-3 flex items-center pointer-events-none text-white">
-                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-85" />
+              <div className="flex items-center gap-2 relative">
+                <div className="relative">
+                  <select
+                    id="module-switcher"
+                    value={activeModule}
+                    onChange={(e) => setActiveModule(e.target.value)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] sm:text-xs px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border-none shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all appearance-none pr-8 sm:pr-10"
+                  >
+                    <option value="dashboard" className="text-slate-800 bg-white font-semibold">📊 Painel</option>
+                    <option value="schedule" className="text-slate-800 bg-white font-semibold">📅 Cronograma</option>
+                    <option value="syllabus" className="text-slate-800 bg-white font-semibold">📖 Guia Edital</option>
+                    <option value="simulator" className="text-slate-800 bg-white font-semibold">📝 Simulador</option>
+                    <option value="flashcards" className="text-slate-800 bg-white font-semibold">⚡ Flashcards</option>
+                    <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Mentor</option>
+                    <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA Banca</option>
+                    <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustes</option>
+                    {(user.role === "admin" || user.email.toLowerCase() === "gerlianemagalhaes79@gmail.com") && (
+                      <option value="admin" className="text-indigo-850 bg-white font-bold">🔑 Painel de Vendas</option>
+                    )}
+                  </select>
+                  <div className="absolute inset-y-0 right-2 sm:right-3 flex items-center pointer-events-none text-white">
+                    <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-85" />
+                  </div>
                 </div>
+
+                <button
+                  onClick={async () => {
+                    if (window.confirm("Deseja realmente sair da sua conta?")) {
+                      await signOut(auth);
+                    }
+                  }}
+                  className="p-2 sm:p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition-all cursor-pointer text-slate-500 hover:text-slate-800"
+                  title="Sair da Conta"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -538,6 +658,32 @@ export default function App() {
             >
               <Settings className="w-4.5 h-4.5 text-emerald-600" />
               Ajustar Edital
+            </button>
+
+            {(user.role === "admin" || user.email.toLowerCase() === "gerlianemagalhaes79@gmail.com") && (
+              <button
+                onClick={() => setActiveModule("admin")}
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                  activeModule === "admin"
+                    ? "bg-indigo-55 text-indigo-850 border border-indigo-150 font-extrabold"
+                    : "text-slate-600 hover:text-indigo-900 hover:bg-indigo-50/40 border border-transparent"
+                }`}
+              >
+                <Users className="w-4.5 h-4.5 text-indigo-600" />
+                Painel de Vendas
+              </button>
+            )}
+
+            <button
+              onClick={async () => {
+                if (window.confirm("Deseja realmente sair da sua conta?")) {
+                  await signOut(auth);
+                }
+              }}
+              className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50/40 border border-transparent transition-all cursor-pointer mt-4! pt-3 border-t border-slate-100"
+            >
+              <LogOut className="w-4.5 h-4.5 text-rose-500" />
+              Sair da Conta
             </button>
           </nav>
 
@@ -750,6 +896,17 @@ export default function App() {
                         Voltar ao Painel
                       </button>
                     </div>
+                  </motion.div>
+                )}
+
+                {activeModule === "admin" && (
+                  <motion.div
+                    key="admin"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <AdminPanelModule />
                   </motion.div>
                 )}
               </AnimatePresence>

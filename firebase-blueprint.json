@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "student"] },
+        "status": { "type": "string", "enum": ["active", "pending"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role", "status"]
+    },
+    "LicenseKey": {
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "status": { "type": "string", "enum": ["unused", "redeemed"] },
+        "redeemedBy": { "type": "string" },
+        "redeemedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["key", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User accounts and access rights"
+    },
+    "licenseKeys/{keyId}": {
+      "schema": "LicenseKey",
+      "description": "License keys generated for purchase/redemption"
+    }
+  }
+}

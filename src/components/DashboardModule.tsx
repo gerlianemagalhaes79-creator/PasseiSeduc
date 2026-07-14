@@ -491,6 +491,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: "Revisão: Temas Pedagógicos",
               desc: "Revisão Ativa: Temas Educacionais e Pedagógicos",
+              subtopics: [
+                "Revisão ativa de correntes, tendências e autores pedagógicos do edital",
+                "Consolidação de resumos rápidos e resolução de 15 questões de didática"
+              ],
               color: "bg-emerald-500",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
               notes: "Fase de Revisão Final: Utilize seus resumos, mapas mentais e faça questões rápidas de fixação sobre os Temas Pedagógicos do edital."
@@ -499,6 +503,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: "Revisão: Legislação & Admin.",
               desc: "Revisão Ativa: Administração Pública e Legislação Básica",
+              subtopics: [
+                "Revisão focada na LDB (Lei Federal nº 9.394/1996) e ECA (Lei Federal nº 8.069/1990)",
+                "Estudo do Estatuto dos Servidores Públicos Civis do Ceará e Estatuto do Magistério"
+              ],
               color: "bg-indigo-600",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
               notes: "Fase de Revisão Final: Revise a LDB, o Estatuto do Ceará e o Estatuto do Magistério. Foque em prazos e regras específicas!"
@@ -507,6 +515,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: "Revisão: Língua Portuguesa",
               desc: "Revisão Ativa: Língua Portuguesa Básica",
+              subtopics: [
+                "Aceleração de questões de concordância nominal/verbal, regência e crase",
+                "Revisão de tipologia e gêneros textuais recorrentes da banca FUNECE"
+              ],
               color: "bg-blue-500",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
               notes: "Fase de Revisão Final: Faça questões sobre concordância, regência, pontuação e crase da banca FUNECE."
@@ -515,6 +527,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: "Revisão: Dados & Indicadores",
               desc: "Revisão Ativa: Leitura e Interpretação de Dados e Indicadores",
+              subtopics: [
+                "Análise das fórmulas do IDEB, distorção idade-série e fluxo escolar",
+                "Interpretação e leitura de estatísticas educacionais do estado do Ceará (SPAECE)"
+              ],
               color: "bg-purple-600",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
               notes: "Fase de Revisão Final: Revise fórmulas do IDEB, distorção idade-série e taxas de fluxo escolar (abandono, evasão)."
@@ -523,6 +539,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: `Revisão: Específico (${profile.discipline})`,
               desc: `Revisão Ativa: Conhecimentos Específicos de ${profile.discipline}`,
+              subtopics: [
+                `Revisão de fórmulas, leis físicas/biológicas/matemáticas de ${profile.discipline}`,
+                `Resolução de simulados temáticos da área específica para fixação máxima`
+              ],
               color: "bg-amber-500",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
               notes: `Fase de Revisão Final: Dedique este dia para consolidar as fórmulas, teorias e conceitos mais cobrados de ${profile.discipline}.`
@@ -531,6 +551,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: "Simulado Geral Seduc-CE",
               desc: "Simulado Final Completo Seduc-CE",
+              subtopics: [
+                "Realização de prova completa simulando as condições reais do concurso",
+                "Prática de controle de estresse e distribuição de tempo de prova"
+              ],
               color: "bg-teal-600 font-semibold",
               time: "08:00 - 12:00",
               notes: "Simulado Geral Final: Reserve 4 horas ininterruptas e resolva uma prova completa simulando as condições reais do concurso."
@@ -539,6 +563,10 @@ export default function DashboardModule({
             scheduleMap[timeKey] = {
               title: "Descanso e Preparação Mental 🌿",
               desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
+              subtopics: [
+                "Descanso completo das atividades intelectuais e controle da ansiedade",
+                "Organização de documentos físicos com foto, canetas pretas e garrafa de água"
+              ],
               color: "bg-teal-500 font-bold",
               time: "Livre",
               notes: "Sem estudos hoje! Durma cedo, mantenha-se hidratado, separe o documento com foto, caneta preta e descanse o cérebro para o grande dia."
@@ -548,6 +576,10 @@ export default function DashboardModule({
           scheduleMap[timeKey] = {
             title: "Descanso e Preparação Mental 🌿",
             desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
+            subtopics: [
+              "Relaxamento integral e controle mental pré-prova",
+              "Separação de caneta preta de tubo transparente e documento original com foto"
+            ],
             color: "bg-teal-500 font-bold",
             time: "Livre",
             notes: "Sem estudos hoje! Descanse bem, separe canetas e documentos e prepare a mente para a prova amanhã."
@@ -559,6 +591,10 @@ export default function DashboardModule({
           scheduleMap[timeKey] = {
             title: "Simulado Geral + Revisão",
             desc: "Simulado Geral Temático de Sábado",
+            subtopics: [
+              "Resolução de 30 a 40 questões multitemáticas dos assuntos estudados na semana",
+              "Análise de tempo médio de prova por questão e gestão de foco"
+            ],
             color: "bg-rose-500 font-semibold text-white",
             time: "09:00 - 12:00",
             notes: "🎯 **ATIVIDADE DE SÁBADO: SIMULADO DE FIXAÇÃO**\n\nResolva 30 a 40 questões focadas nos temas estudados de segunda a sexta desta semana.\n\nFoque em reproduzir o ambiente de prova: sem celular, sem consultas, cronometrando o tempo médio de 3 minutos por questão."
@@ -567,6 +603,11 @@ export default function DashboardModule({
           scheduleMap[timeKey] = {
             title: "Revisão de Erros e Descanso 🌿",
             desc: "Análise ativa do simulado e descanso restaurador",
+            subtopics: [
+              "Mapeamento de erros no simulado para identificação de lacunas",
+              "Estudo focado de 1 hora sobre os pontos fracos evidenciados",
+              "Período de lazer e descanso mental total no restante do dia"
+            ],
             color: "bg-teal-500 text-white",
             time: "10:00 - 12:00",
             notes: "🧠 **ATIVIDADE DE DOMINGO: APRENDIZAGEM COM ERROS**\n\n1. Abra o gabarito do simulado de ontem.\n2. Para cada erro, identifique se foi por falta de atenção, pressa, ou desconhecimento teórico.\n3. Revise as regras ou pontos correspondentes por 1 hora.\n4. Tire o restante do dia livre para lazer e descanso. Você merece!"
@@ -576,6 +617,7 @@ export default function DashboardModule({
           const notesParts: string[] = [];
           const descParts: string[] = [];
           const subtopicsForDesc: string[] = [];
+          const subtopicsTodayList: string[] = [];
           
           cats.forEach(cat => {
             const s_idx = categorySessionIndices[cat];
@@ -613,6 +655,7 @@ export default function DashboardModule({
             descParts.push(catName);
             if (subtopicsToday && subtopicsToday.length > 0) {
               subtopicsForDesc.push(subtopicsToday[0]);
+              subtopicsTodayList.push(...subtopicsToday);
             }
             notesParts.push(`${emoji} **${catName}**\n* **Subtópicos a estudar hoje:**\n${subtopicsToday.map(s => `  - ${s}`).join("\n")}\n* **Orientação de Estudo:** ${orientation}\n`);
           });
@@ -623,7 +666,7 @@ export default function DashboardModule({
             if (cat === "legislacao") return "Legislação";
             if (cat === "ceara") return "Indicadores";
             return "Específico";
-          }).join(" • ");
+          }).join(" + ");
           
           const color = wkday === 1 ? "bg-sky-600" :
                         wkday === 2 ? "bg-indigo-600" :
@@ -637,6 +680,7 @@ export default function DashboardModule({
           scheduleMap[timeKey] = {
             title: title,
             desc: combinedDesc,
+            subtopics: subtopicsTodayList,
             color: color,
             time: "19:00 - " + (19 + Math.round(hours)) + ":00",
             notes: `📚 **PROGRAMAÇÃO DE ESTUDOS DO DIA**\n\nHoje o seu estudo segue uma estratégia de aprendizagem intercalada (interleaving). Estude os seguintes conteúdos:\n\n${notesParts.join("\n")}`
@@ -2677,28 +2721,27 @@ export default function DashboardModule({
         `}} />
 
         {/* Official Header */}
-        <div className="border-b-4 border-slate-900 pb-5 mb-5">
+        <div className="border-b-4 border-slate-900 pb-4 mb-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              {/* Educational Emblem */}
-              <div className="w-14 h-14 bg-slate-900 text-white flex flex-col items-center justify-center rounded-xl font-serif font-black text-xl border-2 border-slate-800 shrink-0 shadow-sm">
-                <span>IA</span>
-                <span className="text-[9px] font-sans font-bold tracking-widest mt-[-4px] text-emerald-400">APROVA</span>
+            <div className="flex items-center gap-3">
+              {/* Educational Emblem - Clean & Minimalist */}
+              <div className="w-12 h-12 bg-white text-slate-900 flex flex-col items-center justify-center rounded-lg font-sans font-bold text-lg border border-slate-300 shrink-0 shadow-sm">
+                <span className="text-emerald-600">AP</span>
               </div>
               <div>
-                <h1 className="text-lg font-extrabold tracking-tight text-slate-950 uppercase font-mono">
-                  MINISTÉRIO DA APROVAÇÃO • SEDUC-CE 2026
+                <h1 className="text-lg font-extrabold tracking-tight text-slate-950 uppercase font-sans">
+                  Aprova Professor SEDUC CE 2026
                 </h1>
                 <p className="text-xs font-semibold text-slate-700">
-                  Diretoria de Planejamento de Metas • Cronograma de Estudos Individualizado
+                  Cronograma Oficial de Estudos Individualizado
                 </p>
                 <p className="text-[10px] text-slate-500 font-medium">
-                  Documento Técnico de Preparação de Alto Rendimento • Baseado na Recorrência FUNECE
+                  Planejamento Estratégico de Estudos Baseado no Edital Seduc-CE
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <span className="inline-block text-[10px] font-bold font-mono bg-slate-950 text-white px-3 py-1 rounded-md uppercase tracking-wider">
+              <span className="inline-block text-[10px] font-bold font-mono border border-slate-300 text-slate-800 px-3 py-1 rounded-md uppercase tracking-wider bg-slate-50">
                 {profile.examDate 
                   ? `${new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')} - ${new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '')}`.toUpperCase()
                   : "JULHO DE 2026"
@@ -2710,70 +2753,65 @@ export default function DashboardModule({
         </div>
 
         {/* Candidate & Plan Metadata Grid */}
-        <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl mb-6 text-xs text-slate-800">
+        <div className="grid grid-cols-3 gap-4 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 text-xs text-slate-800">
           <div>
             <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block font-mono">Estudante / Candidato(a)</span>
-            <strong className="text-slate-950 block text-[13px] font-sans mt-0.5">{profile.name || "Candidato(a) de Elite"}</strong>
+            <strong className="text-slate-950 block text-[12px] font-sans mt-0.5">{profile.name || "Candidato(a) de Elite"}</strong>
             <span className="text-[10px] text-slate-600 block">
               {profile.level === "advanced" ? "Nível Avançado" : profile.level === "intermediate" ? "Nível Intermediário" : "Nível Iniciante"}
             </span>
           </div>
           <div>
             <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block font-mono">Cargo & Disciplina Alvo</span>
-            <strong className="text-slate-950 block text-[13px] font-sans mt-0.5">Professor Seduc-CE</strong>
+            <strong className="text-slate-950 block text-[12px] font-sans mt-0.5">Professor Seduc-CE</strong>
             <span className="text-[10px] font-semibold text-slate-700 block">{profile.discipline}</span>
           </div>
           <div>
             <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block font-mono">Metas & Planejamento</span>
-            <strong className="text-slate-950 block text-[13px] font-sans mt-0.5">{profile.studyHours || 3} Horas Diárias</strong>
+            <strong className="text-slate-950 block text-[12px] font-sans mt-0.5">{profile.studyHours || 3} Horas Diárias</strong>
             <span className="text-[10px] text-slate-600 block">Estudo Teórico + Questões Diárias</span>
           </div>
         </div>
 
-        {/* Methodological Guidance Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6 text-[10px] text-slate-700 leading-relaxed">
-          <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1.5">
-              💡 METODOLOGIA ATIVA (ENGENHARIA REVERSA)
+        {/* Methodological Guidance & Orientation - Compact Columns */}
+        <div className="grid grid-cols-3 gap-3 mb-4 text-[9px] text-slate-700 leading-relaxed">
+          <div className="p-2.5 border border-slate-200 rounded-lg bg-slate-50/50">
+            <h4 className="font-bold text-slate-900 uppercase tracking-wide font-mono text-[9.5px] mb-1">
+              💡 METODOLOGIA ATIVA
             </h4>
             <p>
-              1. <strong>Estudo de Tópicos:</strong> Use o botão "O que estudar?" no sistema antes de iniciar.<br />
-              2. <strong>Foco Teórico (20%):</strong> Resumos rápidos e conceitos-chave da bibliografia.<br />
-              3. <strong>Fixação (80%):</strong> Resolva pelo menos 15 a 20 questões da FUNECE sobre o assunto do dia.
+              <strong>Estudo de Tópicos:</strong> Teoria rápida (20%) + Resolução ativa de 15 a 20 questões FUNECE (80%) por dia.
             </p>
           </div>
-          <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1.5">
-              🔄 SISTEMA DE REVISÃO E CONTROLE
+          <div className="p-2.5 border border-slate-200 rounded-lg bg-slate-50/50">
+            <h4 className="font-bold text-slate-900 uppercase tracking-wide font-mono text-[9.5px] mb-1">
+              🔄 REVISÃO E CONTROLE
             </h4>
             <p>
-              • <strong>Legenda de Progresso:</strong> Marque <strong>T</strong> (Teoria lida), <strong>Q</strong> (Questões feitas) e <strong>R</strong> (Erros revisados) na coluna final.<br />
-              • <strong>Revisão de 24h:</strong> No início de cada dia de estudos, revise as anotações do dia anterior por 10 minutos.
+              <strong>Legenda de Progresso:</strong> Registre <strong>T</strong> (Teoria), <strong>Q</strong> (Questões) e <strong>R</strong> (Erros revisados) na coluna final.
             </p>
           </div>
-        </div>
-
-        {/* General Orientation Header Box */}
-        <div className="p-3 border-2 border-slate-900 rounded-xl bg-slate-50/25 mb-5 text-[10px] text-slate-800 leading-relaxed page-break-inside-avoid">
-          <h4 className="font-extrabold text-slate-950 uppercase tracking-wide flex items-center gap-1.5 font-mono text-[11px] mb-1">
-            📌 ORIENTAÇÃO GERAL DO CRONOGRAMA
-          </h4>
-          <p>
-            Execute o estudo programático do edital de forma sequencial. Para cada conteúdo programático detalhado listado no cronograma diário abaixo, estude a teoria correspondente (foco em resumos, esquemas e conceitos essenciais da bibliografia) e resolva ativamente blocos de questões da banca <strong>FUNECE</strong> para fixação prática. Marque seu progresso (<strong>T</strong>, <strong>Q</strong>, <strong>R</strong>) no final de cada dia estudado.
-          </p>
+          <div className="p-2.5 border border-slate-200 rounded-lg bg-slate-50/50">
+            <h4 className="font-bold text-slate-900 uppercase tracking-wide font-mono text-[9.5px] mb-1">
+              📌 ORIENTAÇÃO GERAL
+            </h4>
+            <p>
+              Execute o cronograma diário sequencialmente. Estude a teoria essencial e resolva blocos de questões da banca <strong>FUNECE</strong> para fixação.
+            </p>
+          </div>
         </div>
 
         {/* Detailed Table */}
         <div className="overflow-hidden border border-slate-300 rounded-xl">
           <table className="w-full border-collapse text-[10px] text-left">
             <thead>
-              <tr className="bg-slate-900 text-white font-mono uppercase tracking-wider text-[9px] border-b border-slate-900">
-                <th className="p-2.5 font-bold w-12 text-center">Data</th>
-                <th className="p-2.5 font-bold w-24">Semana</th>
-                <th className="p-2.5 font-bold w-36">Área / Disciplina</th>
-                <th className="p-2.5 font-bold">Conteúdo Programático Detalhado</th>
-                <th className="p-2.5 font-bold w-20 text-center">Horário</th>
-                <th className="p-2.5 font-bold w-20 text-center">Progresso</th>
+              <tr className="bg-slate-50 text-slate-800 border-b border-slate-300 font-mono uppercase tracking-wider text-[9px]">
+                <th className="p-2 border-r border-slate-200 font-bold w-12 text-center text-slate-700">Data</th>
+                <th className="p-2 border-r border-slate-200 font-bold w-24 text-slate-700">Dia</th>
+                <th className="p-2 border-r border-slate-200 font-bold w-40 text-slate-700">Área / Disciplina</th>
+                <th className="p-2 border-r border-slate-200 font-bold text-slate-700">Conteúdo Programático Detalhado</th>
+                <th className="p-2 border-r border-slate-200 font-bold w-20 text-center text-slate-700">Horário</th>
+                <th className="p-2 font-bold w-20 text-center text-slate-700">Progresso</th>
               </tr>
             </thead>
             <tbody>
@@ -2818,40 +2856,47 @@ export default function DashboardModule({
                     color: dateTopic.color,
                     time: dateTopic.time,
                     notes: dateTopic.notes,
-                    isExam: (dateTopic as any).isExam
+                    isExam: (dateTopic as any).isExam,
+                    subtopics: dateTopic.subtopics
                   } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
 
                   const cleanInfo = dateTopic ? {
-                    subject: "Estudo Intercalado",
+                    subject: dateTopic.title,
                     subtopic: dateTopic.desc
                   } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "Livre / Revisão", subtopic: "Folga programada, simulados ou revisão de pontos fracos" });
+                  
                   const isExam = scheduleItem && (scheduleItem as any).isExam;
 
-                  let badgeClass = "border border-slate-300 bg-slate-50 text-slate-800";
-                  if (scheduleItem?.color) {
-                    if (scheduleItem.color.includes("indigo")) badgeClass = "border border-indigo-200 bg-indigo-50 text-indigo-900 font-bold";
-                    else if (scheduleItem.color.includes("emerald")) badgeClass = "border border-emerald-200 bg-emerald-50 text-emerald-900 font-bold";
-                    else if (scheduleItem.color.includes("purple")) badgeClass = "border border-purple-200 bg-purple-50 text-purple-900 font-bold";
-                    else if (scheduleItem.color.includes("amber")) badgeClass = "border border-amber-200 bg-amber-50 text-amber-900 font-bold";
+                  let subtopicsToShow: string[] = [];
+                  if (dateTopic && dateTopic.subtopics) {
+                    subtopicsToShow = dateTopic.subtopics;
+                  } else if (cleanInfo.subtopic) {
+                    if (cleanInfo.subtopic.includes("//")) {
+                      subtopicsToShow = cleanInfo.subtopic.split("//")[1]?.split("+").map((s: string) => s.trim()) || [cleanInfo.subtopic];
+                    } else if (cleanInfo.subtopic.includes("+")) {
+                      subtopicsToShow = cleanInfo.subtopic.split("+").map((s: string) => s.trim());
+                    } else {
+                      subtopicsToShow = [cleanInfo.subtopic];
+                    }
                   }
 
                   const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
 
                   return (
                     <tr key={idx} className={`border-b border-slate-200 ${isExam ? "bg-rose-50" : dayNum % 2 === 0 ? "bg-slate-50/40" : "bg-white"}`}>
-                      <td className="p-2.5 border-r border-slate-200 font-mono text-center font-bold text-slate-950 text-xs">
+                      <td className="p-2 border-r border-slate-200 font-mono text-center font-bold text-slate-950 text-xs">
                         {formattedDate}
                       </td>
-                      <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-700">
+                      <td className="p-2 border-r border-slate-200 font-semibold text-slate-700">
                         {weekdayName}
                       </td>
-                      <td className="p-2.5 border-r border-slate-200">
+                      <td className="p-2 border-r border-slate-200">
                         {isExam ? (
                           <span className="inline-block px-2 py-1 text-[9px] rounded-md font-extrabold uppercase border border-rose-300 bg-rose-100 text-rose-950 tracking-wide">
                             🏁 CONCURSO
                           </span>
                         ) : scheduleItem ? (
-                          <span className={`inline-block px-2 py-0.5 text-[8.5px] rounded-md uppercase tracking-tight font-semibold ${badgeClass}`}>
+                          <span className="text-[10px] font-bold text-slate-800 uppercase tracking-tight">
                             {cleanInfo.subject}
                           </span>
                         ) : (
@@ -2860,15 +2905,27 @@ export default function DashboardModule({
                           </span>
                         )}
                       </td>
-                      <td className="p-2.5 border-r border-slate-200 leading-normal">
-                        <div className="font-bold text-slate-950 text-xs">
-                          {isExam ? "GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026" : cleanInfo.subtopic}
-                        </div>
+                      <td className="p-2 border-r border-slate-200 leading-normal">
+                        {isExam ? (
+                          <div className="font-bold text-slate-950 text-xs uppercase tracking-tight">
+                            🏆 GRANDE DIA DA SUA APROVAÇÃO! PROVA OFICIAL SEDUC-CE 2026
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <ul className="list-disc list-inside space-y-1 text-slate-700 text-[10px]">
+                              {subtopicsToShow.map((sub: string, sIdx: number) => (
+                                <li key={sIdx} className="leading-relaxed font-medium">
+                                  {sub}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </td>
-                      <td className="p-2.5 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-700 font-medium">
+                      <td className="p-2 border-r border-slate-200 text-center font-mono text-[9.5px] text-slate-700 font-medium">
                         {scheduleItem ? scheduleItem.time : "Meta Livre"}
                       </td>
-                      <td className="p-2.5 text-center text-[10px] text-slate-400 font-mono font-bold">
+                      <td className="p-2 text-center text-[10px] text-slate-400 font-mono font-bold">
                         <div className="flex justify-center gap-1">
                           <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">T</span>
                           <span className="border border-slate-300 w-5 h-5 flex items-center justify-center text-[8px] text-slate-600 rounded">Q</span>
@@ -2884,7 +2941,7 @@ export default function DashboardModule({
         </div>
 
         {/* Commitment Agreement Section */}
-        <div className="mt-6 p-4 border-2 border-slate-900 border-dashed rounded-2xl bg-white page-break-inside-avoid">
+        <div className="mt-5 p-4 border-2 border-slate-900 border-dashed rounded-xl bg-white page-break-inside-avoid">
           <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-950 font-mono mb-2">
             🤝 COMPROMISSO DE HONRA COM A MINHA CARREIRA
           </h4>
@@ -2905,8 +2962,8 @@ export default function DashboardModule({
         </div>
 
         {/* Document Footer */}
-        <div className="mt-8 text-center text-[9px] text-slate-400 border-t border-slate-200 pt-4 font-mono font-bold flex justify-between items-center">
-          <span>SISTEMA DE PREPARAÇÃO INTELIGENTE • IA APROVA</span>
+        <div className="mt-6 text-center text-[9px] text-slate-400 border-t border-slate-200 pt-4 font-mono font-bold flex justify-between items-center">
+          <span>APROVA PROFESSOR SEDUC CE 2026 • SISTEMA DE PREPARAÇÃO INTELIGENTE</span>
           <span>ESTADO DO CEARÁ • SEDUC-CE 2026</span>
           <span>PÁGINA 1 DE 1</span>
         </div>
