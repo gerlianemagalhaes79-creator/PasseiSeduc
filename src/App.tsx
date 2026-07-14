@@ -87,6 +87,42 @@ export default function App() {
     return INITIAL_TOPICS;
   });
   const [currentTopic, setCurrentTopic] = useState<string>("Legislação Educacional Geral e Didática");
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleResetAllData = () => {
+    localStorage.removeItem("ia_aprova_onboarded");
+    localStorage.removeItem("ia_aprova_profile");
+    localStorage.removeItem("ia_aprova_topics_v4");
+    localStorage.removeItem("ia_aprova_flashcards_v1");
+    localStorage.removeItem("ia_aprova_completed_days");
+    localStorage.removeItem("ia_aprova_custom_schedule_v5");
+    localStorage.removeItem("ia_aprova_has_customized_schedule");
+
+    setFlashcards([]);
+    setTopics(INITIAL_TOPICS);
+    setBanca("FUNECE");
+    setDiscipline("Matemática");
+    setExamDate("2026-09-26");
+    setSquareLogo("");
+    setRectangularLogo("");
+    setEditalText("Edital oficial SEDUC-CE de 2026. Prioriza LDB atualizada, Plano Nacional de Educação, Estatuto do Magistério do Ceará, Didática Geral, metodologias ativas e avaliação formativa.");
+    setProfile({
+      discipline: "Matemática",
+      banca: "FUNECE",
+      studyHours: 3,
+      level: "intermediate",
+      streak: 1,
+      totalQuestions: 0,
+      totalCorrect: 0,
+      totalSeconds: 0,
+      examDate: "2026-09-26",
+      studyStartDate: "2026-07-09",
+      history: []
+    });
+    setConfirmReset(false);
+    setOnboarded(false);
+    setActiveModule("dashboard");
+  };
 
   useEffect(() => {
     localStorage.setItem("ia_aprova_topics_v4", JSON.stringify(topics));
@@ -864,6 +900,50 @@ export default function App() {
                             O Professor Mentor agora está calibrado para simular o estilo de cobrança específico de <strong>{banca}</strong> com foco pedagógico em <strong>{discipline}</strong>.
                           </p>
                         </div>
+                      </div>
+
+                      {/* Área de Perigo / Redefinição Geral */}
+                      <div className="border-t border-rose-100 pt-5 mt-5">
+                        <h4 className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                          Área de Perigo: Começar do Zero
+                        </h4>
+                        <p className="text-slate-400 text-[10.5px] mb-3 leading-normal">
+                          Se você deseja apagar todo o seu progresso, histórico de simulados, flashcards, conversas com o mentor e gerar um <strong>novo cronograma personalizado</strong> com outras datas ou disciplinas, clique no botão abaixo para reiniciar o onboarding.
+                        </p>
+                        
+                        {!confirmReset ? (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmReset(true)}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Apagar tudo e Começar do Zero
+                          </button>
+                        ) : (
+                          <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 space-y-3">
+                            <p className="text-rose-800 text-[11px] font-medium leading-normal">
+                              ⚠️ <strong>Atenção:</strong> Esta ação é irreversível. Todas as suas estatísticas de estudo e o calendário atual serão excluídos para iniciar a tela de onboarding novamente.
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={handleResetAllData}
+                                className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all cursor-pointer animate-pulse"
+                              >
+                                Sim, apagar tudo e reiniciar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmReset(false)}
+                                className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs transition-all cursor-pointer"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <button
