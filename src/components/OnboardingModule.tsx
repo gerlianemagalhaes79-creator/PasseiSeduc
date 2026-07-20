@@ -26,6 +26,7 @@ interface OnboardingModuleProps {
     studyHours: number;
     discipline: string;
     examDate?: string;
+    studyStartDate?: string;
     hasEdital?: boolean;
     editalFileName?: string;
     editalTopics?: string[];
@@ -42,6 +43,12 @@ export default function OnboardingModule({ onComplete }: OnboardingModuleProps) 
   const [error, setError] = useState("");
 
   const [examDate, setExamDate] = useState("");
+  const [studyStartDate, setStudyStartDate] = useState(() => {
+    const localDate = new Date();
+    const offset = localDate.getTimezoneOffset();
+    const adjustedDate = new Date(localDate.getTime() - (offset * 60 * 1000));
+    return adjustedDate.toISOString().split('T')[0];
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -218,6 +225,7 @@ export default function OnboardingModule({ onComplete }: OnboardingModuleProps) 
       studyHours,
       discipline,
       examDate: examDate || undefined,
+      studyStartDate: studyStartDate || undefined,
       hasEdital: !!attachedFile,
       editalFileName: attachedFile ? attachedFile.name : undefined,
       editalTopics: processedTopics.length > 0 ? processedTopics : undefined
@@ -432,6 +440,20 @@ export default function OnboardingModule({ onComplete }: OnboardingModuleProps) 
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Data de Início dos Estudos */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-600" />
+                    Início dos Estudos
+                  </label>
+                  <input
+                    type="date"
+                    value={studyStartDate}
+                    onChange={(e) => setStudyStartDate(e.target.value)}
+                    className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-100 focus:border-emerald-500 rounded-2xl p-4 text-sm text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/10 font-medium cursor-pointer font-sans"
+                  />
+                </div>
+
                 {/* Data da Prova */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
@@ -445,37 +467,38 @@ export default function OnboardingModule({ onComplete }: OnboardingModuleProps) 
                     className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-100 focus:border-emerald-500 rounded-2xl p-4 text-sm text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/10 font-medium cursor-pointer font-sans"
                   />
                 </div>
+              </div>
 
-                {/* Anexo de Edital */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-emerald-600" />
-                    Anexar Edital / Conteúdo
-                  </label>
-                  
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                      const files = e.dataTransfer.files;
-                      if (files && files.length > 0) {
-                        handleFileChange(files[0]);
-                      }
-                    }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[105px] ${
-                      isDragging
-                        ? "border-emerald-500 bg-emerald-50/30"
-                        : attachedFile
-                        ? "border-emerald-500 bg-emerald-50/10"
-                        : "border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50"
-                    }`}
-                  >
+              {/* Anexo de Edital */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-emerald-600" />
+                  Anexar Edital / Conteúdo
+                </label>
+                
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                      handleFileChange(files[0]);
+                    }
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[105px] ${
+                    isDragging
+                      ? "border-emerald-500 bg-emerald-50/30"
+                      : attachedFile
+                      ? "border-emerald-500 bg-emerald-50/10"
+                      : "border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50"
+                  }`}
+                >
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -519,7 +542,6 @@ export default function OnboardingModule({ onComplete }: OnboardingModuleProps) 
                     )}
                   </div>
                 </div>
-              </div>
 
               {/* Se o Edital foi processado, mostrar os tópicos identificados com animação */}
               {processedTopics.length > 0 && !isProcessingFile && (

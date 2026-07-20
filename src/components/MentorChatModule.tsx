@@ -32,7 +32,8 @@ export default function MentorChatModule({ profile, currentTopic, topics = [] }:
   const examSchedule = useMemo(() => {
     if (!profile.examDate) return {};
     
-    const startDateObj = new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00");
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const startDateObj = new Date((profile.studyStartDate || todayStr) + "T12:00:00");
     startDateObj.setHours(0, 0, 0, 0);
     
     const examDateObj = new Date(profile.examDate + "T12:00:00");

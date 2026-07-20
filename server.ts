@@ -31,10 +31,7 @@ function getGeminiClient(): GoogleGenAI | null {
   return aiClient;
 }
 
-// Global flag to track if gemini-3.5-flash has run out of quota for the session
-let isGemini35Exhausted = false;
-
-// Helper function to call Gemini models with robust retries and model fallback
+// Helper function to call Gemini models with robust retries and model fallback cascading
 async function generateContentWithRetry(
   ai: GoogleGenAI,
   options: {
@@ -44,85 +41,34 @@ async function generateContentWithRetry(
   },
   maxRetries = 1
 ): Promise<any> {
-  let primaryModel = options.model || "gemini-3.1-flash-lite";
-  
-  // If gemini-3.5-flash is requested but exhausted, bypass to gemini-3.1-flash-lite
-  if (primaryModel === "gemini-3.5-flash" && isGemini35Exhausted) {
-    console.log("[Gemini Call] gemini-3.5-flash is currently flagged as exhausted. Bypassing directly to gemini-3.1-flash-lite...");
-    primaryModel = "gemini-3.1-flash-lite";
-  }
+  const modelsToTry = options.model 
+    ? [options.model, "gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"] 
+    : ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"];
 
-  // Fall back to gemini-3.5-flash if primary is gemini-3.1-flash-lite, otherwise fallback to gemini-3.1-flash-lite
-  let fallbackModel = primaryModel === "gemini-3.1-flash-lite" ? "gemini-3.5-flash" : "gemini-3.1-flash-lite";
-  
-  // Skip fallback if fallback is gemini-3.5-flash and it is exhausted
-  if (fallbackModel === "gemini-3.5-flash" && isGemini35Exhausted) {
-    fallbackModel = "";
-  }
-  
+  const uniqueModels = Array.from(new Set(modelsToTry));
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  let lastError: any = null;
 
-  // Try Primary Model first with retries
-  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
-    try {
-      console.log(`[Gemini Call] Requesting ${primaryModel} (Attempt ${attempt}/${maxRetries + 1})...`);
-      const response = await ai.models.generateContent({
-        model: primaryModel,
-        contents: options.contents,
-        config: options.config,
-      });
-      return response;
-    } catch (err: any) {
-      const isQuotaExceeded = err.status === 429 || 
-                              err.statusCode === 429 || 
-                              (err.message && (
-                                err.message.includes("quota") || 
-                                err.message.includes("RESOURCE_EXHAUSTED") || 
-                                err.message.includes("limit")
-                              ));
-
-      const isPermanentClientError = err.status === 400 || 
-                                     err.statusCode === 400 || 
-                                     (err.message && err.message.includes("400")) ||
-                                     err.status === 401 ||
-                                     err.statusCode === 401 ||
-                                     (err.message && err.message.includes("401")) ||
-                                     err.status === 403 ||
-                                     err.statusCode === 403 ||
-                                     (err.message && err.message.includes("403"));
-
-      const isRetriable = !isPermanentClientError;
-
-      if (isQuotaExceeded && primaryModel === "gemini-3.5-flash") {
-        console.warn(`[Gemini Call] Detected gemini-3.5-flash quota exhaustion/429. Flagging as exhausted for session to bypass future retries.`);
-        isGemini35Exhausted = true;
-        break; // Stop retrying primaryModel and transition to fallbackModel immediately
-      }
-
-      if (isRetriable && attempt <= maxRetries) {
-        const delay = attempt * 1000; // Fast retry delay
-        console.warn(`[Gemini Call] ${primaryModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
-        await sleep(delay);
-        continue;
-      }
-      
-      console.warn(`[Gemini Call] ${primaryModel} failed. Transitioning to fallback model ${fallbackModel || "NONE"}...`);
-      break; // Try fallback model
-    }
-  }
-
-  // Try Fallback Model with retries
-  if (fallbackModel) {
+  for (const modelName of uniqueModels) {
     for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
       try {
-        console.log(`[Gemini Call] Requesting fallback ${fallbackModel} (Attempt ${attempt}/${maxRetries + 1})...`);
+        console.log(`[Gemini Call] Requesting ${modelName} (Attempt ${attempt}/${maxRetries + 1})...`);
         const response = await ai.models.generateContent({
-          model: fallbackModel,
+          model: modelName,
           contents: options.contents,
           config: options.config,
         });
         return response;
       } catch (err: any) {
+        lastError = err;
+        const isQuotaExceeded = err.status === 429 || 
+                                err.statusCode === 429 || 
+                                (err.message && (
+                                  err.message.includes("quota") || 
+                                  err.message.includes("RESOURCE_EXHAUSTED") || 
+                                  err.message.includes("limit")
+                                ));
+
         const isPermanentClientError = err.status === 400 || 
                                        err.statusCode === 400 || 
                                        (err.message && err.message.includes("400")) ||
@@ -137,18 +83,19 @@ async function generateContentWithRetry(
 
         if (isRetriable && attempt <= maxRetries) {
           const delay = attempt * 1000;
-          console.warn(`[Gemini Call] Fallback ${fallbackModel} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
+          console.warn(`[Gemini Call] ${modelName} failed with error (${err.message || "Error"}). Retrying in ${delay}ms...`);
           await sleep(delay);
           continue;
         }
-        console.error(`[Gemini Call] Both primary and fallback models failed.`);
-        throw err; // bubble up
+        
+        console.warn(`[Gemini Call] ${modelName} failed. Transitioning to next model...`);
+        break;
       }
     }
-  } else {
-    console.error(`[Gemini Call] Primary model failed and no fallback model is available.`);
-    throw new Error(`Primary model ${primaryModel} failed and fallback is exhausted/unavailable.`);
   }
+
+  console.error(`[Gemini Call] All models in the cascade failed.`);
+  throw lastError || new Error("All Gemini models failed to respond.");
 }
 
 // Fallback question generation in case Gemini is offline or API key is missing
@@ -436,10 +383,59 @@ Este relatório foi gerado através do mapeamento técnico de provas reais aplic
 `;
 }
 
-// Endpoint: Generate Question
 app.post("/api/generate-question", async (req, res) => {
-  const { topic, discipline, banca } = req.body;
+  const { topic, topicId, category, discipline, userDiscipline, banca, hierarchy } = req.body;
   const currentBanca = banca || "FUNECE";
+
+  // Server-side robust parameter resolution and normalization
+  let resolvedCategory = category || "mixed";
+  let resolvedTopic = topic || "Legislação Geral";
+  let resolvedTopicId = topicId || "";
+  let resolvedDiscipline = discipline || "Didática e Legislação";
+  let resolvedUserDiscipline = userDiscipline || "Matemática";
+
+  const normalizedTopic = resolvedTopic.toLowerCase();
+  
+  if (resolvedCategory === "mixed" || !category) {
+    if (normalizedTopic.includes("regência") || normalizedTopic.includes("concordância") || normalizedTopic.includes("língua") || normalizedTopic.includes("ortografia") || normalizedTopic.includes("sintaxe") || normalizedTopic.includes("compreensão")) {
+      resolvedCategory = "comuns";
+    } else if (normalizedTopic.includes("ldb") || normalizedTopic.includes("eca") || normalizedTopic.includes("lei") || normalizedTopic.includes("pne") || normalizedTopic.includes("estatuto") || normalizedTopic.includes("funcionários")) {
+      resolvedCategory = "legislacao";
+    } else if (normalizedTopic.includes("didática") || normalizedTopic.includes("pedagógico") || normalizedTopic.includes("aprendizagem") || normalizedTopic.includes("piaget") || normalizedTopic.includes("aula")) {
+      resolvedCategory = "didatica";
+    } else if (normalizedTopic.includes("dados") || normalizedTopic.includes("matricula") || normalizedTopic.includes("idade-série") || normalizedTopic.includes("spaece")) {
+      resolvedCategory = "ceara";
+    } else {
+      resolvedCategory = "especifico";
+    }
+  }
+
+  if (resolvedCategory === "comuns") {
+    resolvedDiscipline = "Língua Portuguesa";
+  } else if (resolvedCategory === "legislacao") {
+    resolvedDiscipline = "Legislação Educacional e Administração Pública";
+  } else if (resolvedCategory === "didatica") {
+    resolvedDiscipline = "Temas Educacionais e Pedagógicos (Didática)";
+  } else if (resolvedCategory === "ceara") {
+    resolvedDiscipline = "Leitura e Interpretação de Dados e Indicadores Educacionais";
+  } else if (resolvedCategory === "especifico") {
+    resolvedDiscipline = resolvedUserDiscipline || "Matemática";
+  }
+
+  let resolvedHierarchy = hierarchy;
+  if (!resolvedHierarchy) {
+    if (resolvedCategory === "comuns") {
+      resolvedHierarchy = `Conhecimentos Básicos -> Língua Portuguesa -> ${resolvedTopic}`;
+    } else if (resolvedCategory === "legislacao") {
+      resolvedHierarchy = `Conhecimentos Básicos -> Administração Pública e Legislação Básica -> ${resolvedTopic}`;
+    } else if (resolvedCategory === "didatica") {
+      resolvedHierarchy = `Conhecimentos Básicos -> Temas Educacionais e Pedagógicos (Didática) -> ${resolvedTopic}`;
+    } else if (resolvedCategory === "ceara") {
+      resolvedHierarchy = `Conhecimentos Básicos -> Leitura e Interpretação de Dados e Indicadores Educacionais -> ${resolvedTopic}`;
+    } else {
+      resolvedHierarchy = `Conhecimentos Específicos -> ${resolvedDiscipline} -> ${resolvedTopic}`;
+    }
+  }
 
   const ai = getGeminiClient();
   if (!ai) {
@@ -448,7 +444,7 @@ app.post("/api/generate-question", async (req, res) => {
       success: true,
       isFallback: true,
       warning: "Usando base de dados local (Chave API não configurada).",
-      data: getFallbackQuestion(topic || "Legislação Geral", discipline || "Matemática", currentBanca)
+      data: getFallbackQuestion(resolvedTopic, resolvedDiscipline, currentBanca)
     });
   }
 
@@ -456,122 +452,9 @@ app.post("/api/generate-question", async (req, res) => {
     const isFunece = currentBanca === "FUNECE";
     const alternativesCount = isFunece ? "4 alternativas (A, B, C, D)" : "5 alternativas (A, B, C, D, E)";
 
-    console.log(`[Multi-Agent Pipeline] Generating question for Topic: "${topic}", Discipline: "${discipline}", Banca: "${currentBanca}"`);
+    console.log(`[Consolidated Pipeline] Resolved filters: Topic: "${resolvedTopic}", Category: "${resolvedCategory}", Discipline: "${resolvedDiscipline}", Banca: "${currentBanca}", Hierarchy: "${resolvedHierarchy}"`);
 
-    // ==========================================
-    // AGENT 1: ANALYST (Agente Analista)
-    // ==========================================
-    console.log("[Agent 1] Invoking Analyst...");
-    const analystPrompt = `Você é o Agente Analista, um especialista em Engenharia Reversa de Concursos Públicos e Mapeamento Curricular.
-Sua missão é realizar uma análise cirúrgica do tópico "${topic}" para a disciplina de "${discipline}" sob a ótica de cobrança da banca "${currentBanca}".
-
-Você deve mapear:
-1. Os conceitos centrais reais, leis aplicáveis (ex: LDB, PNE, etc.), teóricos (Piaget, Vygotsky, Libâneo, Saviani, etc.) que fundamentam esse tema.
-2. O padrão estilístico da banca "${currentBanca}" (rigor acadêmico, literalidade ou aplicação prática).
-3. Distratores de alta plausibilidade: táticas de desvios, confusões de conceitos e pegadinhas que a banca comumente cria para esse assunto específico.`;
-
-    const analystResponse = await generateContentWithRetry(ai, {
-      model: "gemini-3.1-flash-lite",
-      contents: analystPrompt,
-      config: {
-        systemInstruction: "Você é um especialista em análise de bancas examinadoras e pedagogia. Forneça respostas analíticas extremamente precisas e estruturadas em JSON.",
-        responseMimeType: "application/json",
-        temperature: 0.2,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            topicAnalysis: { type: Type.STRING, description: "Visão geral analítica da cobrança do tema pela banca." },
-            coreConcepts: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "Lista de conceitos reais e leis que devem ser avaliados."
-            },
-            bancaPattern: { type: Type.STRING, description: "Estilo e formato de comandos típicos da banca para este assunto." },
-            potentialDistractors: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "Estratégias específicas de distração a serem utilizadas para induzir ao erro de forma inteligente."
-            }
-          },
-          required: ["topicAnalysis", "coreConcepts", "bancaPattern", "potentialDistractors"]
-        }
-      }
-    });
-
-    const analystText = analystResponse.text?.trim() || "{}";
-    const analysisBriefing = JSON.parse(analystText);
-    console.log("[Agent 1] Analyst Output parsed successfully.");
-
-    // ==========================================
-    // AGENT 2: ELABORATOR (Agente Elaborador)
-    // ==========================================
-    console.log("[Agent 2] Invoking Elaborator...");
-    const elaboratorPrompt = `Você é o Agente Elaborador, um mestre em Psicometria e Redação de Itens de Avaliação.
-Sua missão é criar uma questão de múltipla escolha INÉDITA baseando-se estritamente no Briefing de Análise fornecido abaixo.
-
-[BRIEFING DE ANÁLISE]:
-${JSON.stringify(analysisBriefing, null, 2)}
-
-Diretrizes Críticas de Formulação:
-1. Formule exatamente ${alternativesCount}.
-2. O enunciado deve ser robusto, formal, acadêmico e perfeitamente alinhado com o estilo de comando da banca "${currentBanca}".
-3. Use os distratores recomendados no briefing para estruturar as alternativas incorretas de modo extremamente plausível.
-4. Mantenha fidelidade aos fatos, leis e teorias reais (LDB, autores pedagógicos, etc.). Proibido inventar artigos ou conceitos absurdos.
-5. Defina uma única alternativa correta incontestável.`;
-
-    const elaboratorResponse = await generateContentWithRetry(ai, {
-      model: "gemini-3.1-flash-lite",
-      contents: elaboratorPrompt,
-      config: {
-        systemInstruction: "Você é um redator sênior de exames de concurso público. Crie questões realistas e difíceis com precisão psicométrica.",
-        responseMimeType: "application/json",
-        temperature: 0.4,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            draftQuestion: { type: Type.STRING, description: "O enunciado completo e estruturado da questão." },
-            alternatives: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  letter: { type: Type.STRING, description: "A letra da opção (A, B, C, D, etc.)" },
-                  text: { type: Type.STRING, description: "O texto da alternativa elaborada." }
-                },
-                required: ["letter", "text"]
-              }
-            },
-            correctAnswer: { type: Type.STRING, description: "A letra correspondente ao gabarito correto." }
-          },
-          required: ["draftQuestion", "alternatives", "correctAnswer"]
-        }
-      }
-    });
-
-    const elaboratorText = elaboratorResponse.text?.trim() || "{}";
-    const draftQuestionData = JSON.parse(elaboratorText);
-    console.log("[Agent 2] Elaborator Output parsed successfully.");
-
-    // ==========================================
-    // AGENT 3: AUDITOR (Agente Auditor)
-    // ==========================================
-    console.log("[Agent 3] Invoking Auditor...");
-    const auditorPrompt = `Você é o Agente Auditor, especialista em Controle de Qualidade de Questões, Revisão de Texto e Pedagogia de Aprendizagem.
-Sua missão é inspecionar, auditar e lapidar a questão proposta pelo Agente Elaborador, gerando o gabarito comentado definitivo.
-
-[DADOS DE ENTRADA DA QUESTÃO]:
-- Briefing Técnico: ${JSON.stringify(analysisBriefing)}
-- Rascunho da Questão: ${JSON.stringify(draftQuestionData)}
-
-Suas Tarefas de Auditoria:
-1. Sem Alucinação: Garanta que todas as referências legais (LDB, Constituição, PNE) ou citações de autores (Libâneo, Luckesi, Piaget, etc.) são 100% REAIS, verídicas e corretas. Se encontrar qualquer desvio, corrija imediatamente no texto final da questão ou alternativas.
-2. Unicidade de Gabarito: Certifique-se de que não haja margem para dupla interpretação ou recursos.
-3. Comentários Pedagógicos (OBRIGATÓRIO):
-   - Forneça uma justificativa rica e profunda de por que a correta está certa ("correct").
-   - Escreva justificativas individuais minuciosas para cada opção incorreta ("incorrect"), revelando o erro ou pegadinha embutida em cada uma.
-   - Explique a pegadinha clássica ou casca de banana empregada na questão ("pegadinha").
-   - Recomende o foco para revisão ("revisao").`;
-
+    // Schema required for final question JSON
     const finalSchemaRequired = {
       type: Type.OBJECT,
       properties: {
@@ -612,21 +495,119 @@ Suas Tarefas de Auditoria:
       required: ["question", "options", "correctAnswer", "explanation"]
     };
 
-    const auditorResponse = await generateContentWithRetry(ai, {
-      model: "gemini-3.1-flash-lite",
-      contents: auditorPrompt,
-      config: {
-        systemInstruction: `Você é o Auditor Final do PROMPT MASTER. Sua palavra é lei. Você garante perfeição pedagógica, jurídica e gramatical.
-Certifique-se de preencher todos os campos do JSON exigido sem exceção. O campo "incorrect" deve possuir chaves correspondentes para TODAS as alternativas falsas rascunhadas.`,
-        responseMimeType: "application/json",
-        temperature: 0.1,
-        responseSchema: finalSchemaRequired
-      }
-    });
+    let attempts = 0;
+    let finalQuestionData: any = null;
+    let isValid = false;
+    let extraPromptHint = "";
 
-    const auditorText = auditorResponse.text?.trim() || "{}";
-    const finalQuestionData = JSON.parse(auditorText);
-    console.log("[Agent 3] Auditor quality verification passed. Question certified.");
+    while (attempts < 2 && !isValid) {
+      attempts++;
+      console.log(`[Consolidated Pipeline] Question Generation Attempt ${attempts}/2...`);
+
+      let generatorPrompt = `Você é uma Inteligência Artificial sênior de exames de concurso público, mestre em Psicometria e Redação de Itens de Avaliação.
+Sua missão de extrema importância é criar uma questão de múltipla escolha inédita, rigorosa, formal, acadêmica e pedagógica que pertencerá 100% ao assunto e disciplina indicados nos filtros abaixo.
+
+[FILTROS EXIGIDOS PELO USUÁRIO - MANDATÓRIO]:
+- Disciplina do Item: "${resolvedDiscipline}" (Toda a questão e sua fundamentação teórica DEVE ser 100% sobre esta disciplina!)
+- Tópico do Item: "${resolvedTopic}"
+- Categoria de Estudo: "${resolvedCategory}"
+- Caminho Hierárquico Completo: "${resolvedHierarchy}"
+- Banca Examinadora: "${currentBanca}" (Crie no estilo exato da banca, como rigor conceitual ou letra de lei pura)
+
+[DIRETRIZES CRÍTICAS DE CONTEÚDO E SEGURANÇA]:
+1. CORRESPONDÊNCIA TEMÁTICA ESTRETA (100%): O item gerado deve pertencer 100% ao conteúdo e disciplina indicados acima.
+2. PROIBIÇÃO ABSOLUTA DE MISTURA INTERDISCIPLINAR (ZERO ALUCINAÇÃO):
+   - Se a disciplina do item for "Língua Portuguesa" e o assunto for "Regência nominal e verbal", você é EXPRESSAMENTE PROIBIDO de introduzir termos, conceitos, teorias ou problemas de Biologia, Ecologia, Física ou qualquer outra disciplina científica alheia. A análise deve ser linguística, focando nas preposições, regência, trânsito verbal/nominal e na norma-padrão.
+   - Não use textos de apoio sobre outras disciplinas científicas (como ecologia, genética, etc.) para formular questões de Língua Portuguesa. Toda a temática de apoio e as perguntas devem ser centradas no domínio exclusivo da Língua Portuguesa.
+3. FORMULAÇÃO DO ITEM:
+   - Formule exatamente ${alternativesCount}.
+   - O enunciado deve ser robusto, formal, acadêmico e focado no assunto.
+   - Use os distratores clássicos para estruturar as alternativas incorretas de modo extremamente plausível, mas garanta que contenham erros conceituais ou lógicos claros.
+   - Defina uma única alternativa correta incontestável.
+4. COMENTÁRIOS PEDAGÓGICOS (MANDATÓRIO):
+   - Forneça uma justificativa rica e profunda de por que a correta está certa ("correct").
+   - Escreva justificativas individuais minuciosas para cada opção incorreta ("incorrect"), revelando o erro ou pegadinha embutida em cada uma.
+   - Explique a pegadinha clássica ou casca de banana empregada na questão ("pegadinha").
+   - Recomende o foco para revisão ("revisao").`;
+
+      if (extraPromptHint) {
+        generatorPrompt += `\n\n[AVISO DE CORREÇÃO DO FILTRO - MANDATÓRIO]:\nO rascunho anterior foi rejeitado pelo validador automático de qualidade pelo seguinte motivo: "${extraPromptHint}".\nPor favor, corrija isso agora. O item gerado deve focar UNICAMENTE e EXCLUSIVAMENTE em "${resolvedDiscipline}" no assunto "${resolvedTopic}".`;
+      }
+
+      console.log("[Consolidated Pipeline] Invoking Generator...");
+      const generatorResponse = await generateContentWithRetry(ai, {
+        contents: generatorPrompt,
+        config: {
+          systemInstruction: `Você é o PROMPT MASTER elaborador e auditor final. Sua palavra é lei. Você garante perfeição pedagógica, jurídica e gramatical no assunto "${resolvedTopic}". Retorne estritamente o JSON com a estrutura exigida.`,
+          responseMimeType: "application/json",
+          temperature: 0.3,
+          responseSchema: finalSchemaRequired
+        }
+      });
+
+      const generatorText = generatorResponse.text?.trim() || "{}";
+      const candidateQuestionData = JSON.parse(generatorText);
+      console.log("[Consolidated Pipeline] Generator completed. Initiating strict quality validation...");
+
+      // Quality Control Validation Pass
+      const validatorPromptText = `Você é o Agente de Controle de Qualidade de Questões de Concurso.
+Sua missão de extrema urgência e importância é validar se a questão gerada pertence 100% ao conteúdo e disciplina selecionados pelo usuário, sem desvios, alucinações ou misturas interdisciplinares impróprias.
+
+[FILTROS DO USUÁRIO]:
+- Disciplina Selecionada: "${resolvedDiscipline}"
+- Tópico Selecionado: "${resolvedTopic}"
+- Categoria do Conteúdo: "${resolvedCategory}"
+- Caminho Hierárquico: "${resolvedHierarchy}"
+
+[QUESTÃO GERADA]:
+${JSON.stringify(candidateQuestionData, null, 2)}
+
+Regras de Validação Cruciais:
+1. Correspondência Temática Estrita (100%): A questão e suas alternativas devem abordar diretamente e exclusivamente o tópico "${resolvedTopic}" e a disciplina "${resolvedDiscipline}".
+2. Zero Misturas Interdisciplinares: Se a disciplina selecionada for "Língua Portuguesa", a questão deve tratar de gramática, interpretação, concordância, regência, crase, etc. É terminantemente proibido conter enunciados, conceitos, termos técnicos ou perguntas de Biologia, Física, Química, Matemática ou qualquer outra disciplina alheia (por exemplo, nada sobre fluxo gênico, deriva genética, dinâmica de populações ou ecossistemas!).
+3. Não faça associações semânticas amplas que justifiquem a fuga do tema (ex: usar termos científicos de Biologia em uma questão de Língua Portuguesa sob o pretexto de ser um 'texto de apoio' - se o assunto é Regência, a questão inteira deve girar em torno da análise sintático-semântica de regência das palavras, e não sobre genética ou dinâmica de ecossistemas).
+4. Verifique se o assunto cobrado realmente corresponde à disciplina selecionada. Se a disciplina for "Língua Portuguesa", e o assunto for "Regência nominal e verbal", a questão deve cobrar regência (ex: regência verbal, preposição exigida pelo verbo/nome).
+
+Responda em formato JSON informando se a questão é válida e a justificativa técnica.`;
+
+      const validationResponse = await generateContentWithRetry(ai, {
+        contents: validatorPromptText,
+        config: {
+          systemInstruction: "Você é um agente validador rigoroso. Avalie a conformidade da questão em relação ao assunto e disciplina indicados. Retorne estritamente um JSON.",
+          responseMimeType: "application/json",
+          temperature: 0.1,
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              isValid: { type: Type.BOOLEAN, description: "True se a questão atende 100% aos critérios de disciplina e conteúdo sem desvios. False caso contrário." },
+              reason: { type: Type.STRING, description: "Justificativa da decisão." }
+            },
+            required: ["isValid", "reason"]
+          }
+        }
+      });
+
+      const validationText = validationResponse.text?.trim() || "{}";
+      const validationResult = JSON.parse(validationText);
+      console.log(`[Validation Results] Attempt ${attempts}: isValid = ${validationResult.isValid}. Reason: ${validationResult.reason}`);
+
+      if (validationResult.isValid) {
+        isValid = true;
+        finalQuestionData = candidateQuestionData;
+      } else {
+        extraPromptHint = validationResult.reason;
+      }
+    }
+
+    if (!isValid) {
+      console.warn(`[Validation Failed] Failed to generate a valid question after 2 attempts. Falling back to local fallback data.`);
+      return res.json({
+        success: true,
+        isFallback: true,
+        warning: `Limite de tentativas de geração excedido. Usando contingência local para o tópico e disciplina selecionados.`,
+        data: getFallbackQuestion(resolvedTopic, resolvedDiscipline, currentBanca)
+      });
+    }
 
     return res.json({
       success: true,
@@ -634,12 +615,12 @@ Certifique-se de preencher todos os campos do JSON exigido sem exceção. O camp
     });
 
   } catch (error: any) {
-    console.error("Gemini multi-agent question generation error:", error);
+    console.error("Gemini consolidated question generation error:", error);
     return res.json({
       success: true,
       isFallback: true,
-      warning: "Erro ao consultar o Gemini (pipeline multiagente). Usando contingência local.",
-      data: getFallbackQuestion(topic || "Legislação Geral", discipline || "Matemática", currentBanca)
+      warning: "Erro ao consultar o Gemini (pipeline consolidado). Usando contingência local.",
+      data: getFallbackQuestion(resolvedTopic, resolvedDiscipline, currentBanca)
     });
   }
 });

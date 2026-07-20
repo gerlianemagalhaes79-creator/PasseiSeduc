@@ -136,6 +136,92 @@ export default function DashboardModule({
     localStorage.setItem("ia_aprova_completed_days", JSON.stringify(completedDays));
   }, [completedDays]);
 
+  // Persistent local state for specific calendar date completion (to prevent checking off all Mondays across the year)
+  const [completedDates, setCompletedDates] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem("ia_aprova_completed_dates_v1");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_completed_dates_v1", JSON.stringify(completedDates));
+  }, [completedDates]);
+
+  // Persistent state for individual item check-ins on specific calendar dates
+  const [completedDateItems, setCompletedDateItems] = useState<Record<string, Record<string, boolean>>>(() => {
+    const saved = localStorage.getItem("ia_aprova_completed_date_items_v1");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_completed_date_items_v1", JSON.stringify(completedDateItems));
+  }, [completedDateItems]);
+
+  const [selectedCheckInDate, setSelectedCheckInDate] = useState<{
+    year: number;
+    month: number;
+    day: number;
+    timeKey: string;
+    weekdayName: string;
+    scheduleItem: any;
+  } | null>(null);
+
+  const toggleDateItemCompletion = (timeKey: string, itemLabel: string, scheduleItemsList: any[]) => {
+    setCompletedDateItems(prev => {
+      const currentDayItems = prev[timeKey] ? { ...prev[timeKey] } : {};
+      currentDayItems[itemLabel] = !currentDayItems[itemLabel];
+      
+      const newItems = {
+        ...prev,
+        [timeKey]: currentDayItems
+      };
+      
+      // Determine if ALL items for this date are now completed
+      const allCompleted = scheduleItemsList.every(it => !!currentDayItems[it.label]);
+      setCompletedDates(prevDates => ({
+        ...prevDates,
+        [timeKey]: allCompleted
+      }));
+      
+      return newItems;
+    });
+  };
+
+  const toggleFullDateCompletion = (timeKey: string, scheduleItemsList: any[]) => {
+    const nextCompleted = !completedDates[timeKey];
+    setCompletedDates(prev => ({
+      ...prev,
+      [timeKey]: nextCompleted
+    }));
+    
+    // Automatically check or uncheck all individual sub-items
+    setCompletedDateItems(prev => {
+      const dayItems: Record<string, boolean> = {};
+      scheduleItemsList.forEach(it => {
+        dayItems[it.label] = nextCompleted;
+      });
+      return {
+        ...prev,
+        [timeKey]: dayItems
+      };
+    });
+  };
+
   // System recommended default schedule helper
   const getSystemDefaults = (): ScheduleItem[] => {
     const disciplineName = profile.discipline;
@@ -342,20 +428,27 @@ export default function DashboardModule({
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // Dynamic monthly navigation for the calendar view
-  const [currentCalendarYear, setCurrentCalendarYear] = useState(2026);
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(6); // 6 is July
+  const [currentCalendarYear, setCurrentCalendarYear] = useState(() => {
+    const start = profile.studyStartDate ? new Date(profile.studyStartDate + "T12:00:00") : new Date();
+    return start.getFullYear();
+  });
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => {
+    const start = profile.studyStartDate ? new Date(profile.studyStartDate + "T12:00:00") : new Date();
+    return start.getMonth();
+  });
 
   // Pre-calculate the entire interleaved schedule for the active study period
   const examSchedule = useMemo(() => {
     if (!profile.examDate) return {};
     
-    const startDateObj = new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00");
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const startDateObj = new Date((profile.studyStartDate || todayStr) + "T12:00:00");
     startDateObj.setHours(0, 0, 0, 0);
     
     const examDateObj = new Date(profile.examDate + "T12:00:00");
     examDateObj.setHours(0, 0, 0, 0);
     
-    const totalDaysAvailable = Math.max(0, Math.floor((examDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+    const totalDaysAvailable = Math.max(0, Math.round((examDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
     const reviewDays = totalDaysAvailable >= 10 ? 7 : (totalDaysAvailable >= 2 ? 1 : 0);
     const totalActiveStudyDays = totalDaysAvailable - reviewDays;
     
@@ -411,16 +504,20 @@ export default function DashboardModule({
       especifico: 0
     };
 
-    for (let dayIdx = 0; dayIdx < totalActiveStudyDays; dayIdx++) {
-      const d = new Date(startDateObj);
-      d.setDate(startDateObj.getDate() + dayIdx);
-      const wkday = d.getDay();
-      if (wkday >= 1 && wkday <= 5) {
-        const cats = weekdayCategories[wkday] || [];
-        cats.forEach(cat => {
-          if (sessionCounts[cat] !== undefined) sessionCounts[cat]++;
-        });
+    // Count active study sessions precisely by simulating the actual schedule dates
+    let tempCurrent = new Date(startDateObj);
+    while (tempCurrent <= examDateObj) {
+      const daysToExam = Math.round((examDateObj.getTime() - tempCurrent.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysToExam > 0 && daysToExam > reviewDays) {
+        const wkday = tempCurrent.getDay();
+        if (wkday >= 1 && wkday <= 5) {
+          const cats = weekdayCategories[wkday] || [];
+          cats.forEach(cat => {
+            if (sessionCounts[cat] !== undefined) sessionCounts[cat]++;
+          });
+        }
       }
+      tempCurrent.setDate(tempCurrent.getDate() + 1);
     }
 
     const categorySlices: Record<string, string[][]> = {
@@ -474,7 +571,7 @@ export default function DashboardModule({
     let current = new Date(startDateObj);
     while (current <= examDateObj) {
       const timeKey = `${current.getFullYear()}-${current.getMonth()}-${current.getDate()}`;
-      const daysToExam = Math.floor((examDateObj.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+      const daysToExam = Math.round((examDateObj.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysToExam === 0) {
         scheduleMap[timeKey] = {
@@ -493,7 +590,8 @@ export default function DashboardModule({
               desc: "Revisão Ativa: Temas Educacionais e Pedagógicos",
               color: "bg-emerald-500",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-              notes: "Fase de Revisão Final: Utilize seus resumos, mapas mentais e faça questões rápidas de fixação sobre os Temas Pedagógicos do edital."
+              notes: "Fase de Revisão Final: Utilize seus resumos, mapas mentais e faça questões rápidas de fixação sobre os Temas Pedagógicos do edital.",
+              items: [{ label: "Didática", subtopics: ["Revisão Geral de Didática e Temas Pedagógicos"], category: "didatica", topicName: "Didática Geral" }]
             };
           } else if (daysToExam === 6) {
             scheduleMap[timeKey] = {
@@ -501,7 +599,8 @@ export default function DashboardModule({
               desc: "Revisão Ativa: Administração Pública e Legislação Básica",
               color: "bg-indigo-600",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-              notes: "Fase de Revisão Final: Revise a LDB, o Estatuto do Ceará e o Estatuto do Magistério. Foque em prazos e regras específicas!"
+              notes: "Fase de Revisão Final: Revise a LDB, o Estatuto do Ceará e o Estatuto do Magistério. Foque em prazos e regras específicas!",
+              items: [{ label: "Legislação", subtopics: ["Revisão de LDB, ECA e Estatuto do Magistério do CE"], category: "legislacao", topicName: "Legislação de Ensino" }]
             };
           } else if (daysToExam === 5) {
             scheduleMap[timeKey] = {
@@ -509,7 +608,8 @@ export default function DashboardModule({
               desc: "Revisão Ativa: Língua Portuguesa Básica",
               color: "bg-blue-500",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-              notes: "Fase de Revisão Final: Faça questões sobre concordância, regência, pontuação e crase da banca FUNECE."
+              notes: "Fase de Revisão Final: Faça questões sobre concordância, regência, pontuação e crase da banca FUNECE.",
+              items: [{ label: "Português", subtopics: ["Revisão de Concordância, Regência, Crase e Pontuação"], category: "comuns", topicName: "Língua Portuguesa (Leitura, Compreensão e Gramática)" }]
             };
           } else if (daysToExam === 4) {
             scheduleMap[timeKey] = {
@@ -517,7 +617,8 @@ export default function DashboardModule({
               desc: "Revisão Ativa: Leitura e Interpretação de Dados e Indicadores",
               color: "bg-purple-600",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-              notes: "Fase de Revisão Final: Revise fórmulas do IDEB, distorção idade-série e taxas de fluxo escolar (abandono, evasão)."
+              notes: "Fase de Revisão Final: Revise fórmulas do IDEB, distorção idade-série e taxas de fluxo escolar (abandono, evasão).",
+              items: [{ label: "Indicadores", subtopics: ["Revisão de Fórmulas de IDEB, SPAECE, Fluxo Escolar"], category: "ceara", topicName: "Leitura e Interpretação de Dados e Indicadores Educacionais" }]
             };
           } else if (daysToExam === 3) {
             scheduleMap[timeKey] = {
@@ -525,7 +626,8 @@ export default function DashboardModule({
               desc: `Revisão Ativa: Conhecimentos Específicos de ${profile.discipline}`,
               color: "bg-amber-500",
               time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-              notes: `Fase de Revisão Final: Dedique este dia para consolidar as fórmulas, teorias e conceitos mais cobrados de ${profile.discipline}.`
+              notes: `Fase de Revisão Final: Dedique este dia para consolidar as fórmulas, teorias e conceitos mais cobrados de ${profile.discipline}.`,
+              items: [{ label: "Específico", subtopics: [`Revisão Geral e Resolução de Questões de ${profile.discipline}`], category: "especifico", topicName: "Conhecimentos Específicos" }]
             };
           } else if (daysToExam === 2) {
             scheduleMap[timeKey] = {
@@ -533,7 +635,8 @@ export default function DashboardModule({
               desc: "Simulado Final Completo Seduc-CE",
               color: "bg-teal-600 font-semibold",
               time: "08:00 - 12:00",
-              notes: "Simulado Geral Final: Reserve 4 horas ininterruptas e resolva uma prova completa simulando as condições reais do concurso."
+              notes: "Simulado Geral Final: Reserve 4 horas ininterruptas e resolva uma prova completa simulando as condições reais do concurso.",
+              items: [{ label: "Simulado Final", subtopics: ["Simulação completa das condições e tempo de prova"], category: "comuns", topicName: "Simulado Geral" }]
             };
           } else if (daysToExam === 1) {
             scheduleMap[timeKey] = {
@@ -541,7 +644,8 @@ export default function DashboardModule({
               desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
               color: "bg-teal-500 font-bold",
               time: "Livre",
-              notes: "Sem estudos hoje! Durma cedo, mantenha-se hidratado, separe o documento com foto, caneta preta e descanse o cérebro para o grande dia."
+              notes: "Sem estudos hoje! Durma cedo, mantenha-se hidratado, separe o documento com foto, caneta preta e descanse o cérebro para o grande dia.",
+              items: [{ label: "Descanso Geral", subtopics: ["Relaxamento, hidratação, sono adequado e preparação de materiais"], category: "comuns", topicName: "Descanso" }]
             };
           }
         } else {
@@ -550,7 +654,8 @@ export default function DashboardModule({
             desc: "Sem estudos: Descanso absoluto e controle de ansiedade",
             color: "bg-teal-500 font-bold",
             time: "Livre",
-            notes: "Sem estudos hoje! Descanse bem, separe canetas e documentos e prepare a mente para a prova amanhã."
+            notes: "Sem estudos hoje! Descanse bem, separe canetas e documentos e prepare a mente para a prova amanhã.",
+            items: [{ label: "Descanso Geral", subtopics: ["Preparação mental e relaxamento antes do exame"], category: "comuns", topicName: "Descanso" }]
           };
         }
       } else {
@@ -561,7 +666,15 @@ export default function DashboardModule({
             desc: "Simulado Geral Temático de Sábado",
             color: "bg-rose-500 font-semibold text-white",
             time: "09:00 - 12:00",
-            notes: "🎯 **ATIVIDADE DE SÁBADO: SIMULADO DE FIXAÇÃO**\n\nResolva 30 a 40 questões focadas nos temas estudados de segunda a sexta desta semana.\n\nFoque em reproduzir o ambiente de prova: sem celular, sem consultas, cronometrando o tempo médio de 3 minutos por questão."
+            notes: "🎯 **ATIVIDADE DE SÁBADO: SIMULADO DE FIXAÇÃO**\n\nResolva 30 a 40 questões focadas nos temas estudados de segunda a sexta desta semana.\n\nFoque em reproduzir o ambiente de prova: sem celular, sem consultas, cronometrando o tempo médio de 3 minutos por questão.",
+            items: [
+              {
+                label: "Simulado de Fixação",
+                subtopics: ["Foco: Temas estudados durante a semana (30-40 questões)"],
+                category: "comuns",
+                topicName: "Simulado Geral"
+              }
+            ]
           };
         } else if (wkday === 0) {
           scheduleMap[timeKey] = {
@@ -569,13 +682,28 @@ export default function DashboardModule({
             desc: "Análise ativa do simulado e descanso restaurador",
             color: "bg-teal-500 text-white",
             time: "10:00 - 12:00",
-            notes: "🧠 **ATIVIDADE DE DOMINGO: APRENDIZAGEM COM ERROS**\n\n1. Abra o gabarito do simulado de ontem.\n2. Para cada erro, identifique se foi por falta de atenção, pressa, ou desconhecimento teórico.\n3. Revise as regras ou pontos correspondentes por 1 hora.\n4. Tire o restante do dia livre para lazer e descanso. Você merece!"
+            notes: "🧠 **ATIVIDADE DE DOMINGO: APRENDIZAGEM COM ERROS**\n\n1. Abra o gabarito do simulado de ontem.\n2. Para cada erro, identifique se foi por falta de atenção, pressa, ou desconhecimento teórico.\n3. Revise as regras ou pontos correspondentes por 1 hora.\n4. Tire o restante do dia livre para lazer e descanso. Você merece!",
+            items: [
+              {
+                label: "Análise de Erros",
+                subtopics: ["Análise ativa dos erros do simulado e revisão conceitual rápida"],
+                category: "comuns",
+                topicName: "Revisão de Erros"
+              },
+              {
+                label: "Descanso Restaurador",
+                subtopics: ["Tempo livre de lazer e descanso para a saúde mental"],
+                category: "comuns",
+                topicName: "Descanso"
+              }
+            ]
           };
         } else {
           const cats = weekdayCategories[wkday] || [];
           const notesParts: string[] = [];
           const descParts: string[] = [];
           const subtopicsForDesc: string[] = [];
+          const items: any[] = [];
           
           cats.forEach(cat => {
             const s_idx = categorySessionIndices[cat];
@@ -587,32 +715,44 @@ export default function DashboardModule({
             let catName = "";
             let emoji = "";
             let orientation = "";
+            let topicName = "";
             
             if (cat === "comuns") {
               catName = "Português";
               emoji = "📘";
               orientation = "Estudo teórico, análise de regras gerais e resolução de 10 a 15 questões da banca FUNECE.";
+              topicName = "Língua Portuguesa (Leitura, Compreensão e Gramática)";
             } else if (cat === "didatica") {
               catName = "Didática";
               emoji = "🟢";
               orientation = "Fichamento rápido dos conceitos, mapas mentais e memorização das correntes/autores pedagógicos.";
+              topicName = "Didática Geral";
             } else if (cat === "legislacao") {
               catName = "Legislação";
               emoji = "⚖️";
               orientation = "Leitura atenta da letra da lei (LDB/ECA) destacando prazos, responsabilidades e exceções.";
+              topicName = "Legislação de Ensino";
             } else if (cat === "ceara") {
               catName = "Indicadores";
               emoji = "📊";
               orientation = "Interpretação ativa de tabelas, siglas e fórmulas do IDEB, taxas de transição e SPAECE.";
+              topicName = "Leitura e Interpretação de Dados e Indicadores Educacionais";
             } else if (cat === "especifico") {
               catName = "Específico";
               emoji = "🟡";
               orientation = "Aprofundamento teórico-prático do conteúdo com dedicação especial a resolução de problemas.";
+              topicName = "Conhecimentos Específicos";
             }
             
             descParts.push(catName);
             if (subtopicsToday && subtopicsToday.length > 0) {
               subtopicsForDesc.push(subtopicsToday[0]);
+              items.push({
+                label: catName,
+                subtopics: subtopicsToday,
+                category: cat,
+                topicName: topicName
+              });
             }
             notesParts.push(`${emoji} **${catName}**\n* **Subtópicos a estudar hoje:**\n${subtopicsToday.map(s => `  - ${s}`).join("\n")}\n* **Orientação de Estudo:** ${orientation}\n`);
           });
@@ -639,7 +779,8 @@ export default function DashboardModule({
             desc: combinedDesc,
             color: color,
             time: "19:00 - " + (19 + Math.round(hours)) + ":00",
-            notes: `📚 **PROGRAMAÇÃO DE ESTUDOS DO DIA**\n\nHoje o seu estudo segue uma estratégia de aprendizagem intercalada (interleaving). Estude os seguintes conteúdos:\n\n${notesParts.join("\n")}`
+            notes: `📚 **PROGRAMAÇÃO DE ESTUDOS DO DIA**\n\nHoje o seu estudo segue uma estratégia de aprendizagem intercalada (interleaving). Estude os seguintes conteúdos:\n\n${notesParts.join("\n")}`,
+            items: items
           };
         }
       }
@@ -649,6 +790,33 @@ export default function DashboardModule({
     
     return scheduleMap;
   }, [profile, topics]);
+
+  useEffect(() => {
+    if (profile.studyStartDate) {
+      const start = new Date(profile.studyStartDate + "T12:00:00");
+      setCurrentCalendarYear(start.getFullYear());
+      setCurrentCalendarMonth(start.getMonth());
+    }
+  }, [profile.studyStartDate]);
+
+  const studyDatesList = useMemo(() => {
+    if (!profile.examDate) return [];
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const start = new Date((profile.studyStartDate || todayStr) + "T12:00:00");
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(profile.examDate + "T12:00:00");
+    end.setHours(0, 0, 0, 0);
+    
+    const dates: Date[] = [];
+    let current = new Date(start);
+    let maxIterations = 365;
+    while (current <= end && maxIterations > 0) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+      maxIterations--;
+    }
+    return dates;
+  }, [profile.studyStartDate, profile.examDate]);
 
   const getTopicForDate = (year: number, month: number, day: number) => {
     if (!profile.examDate) return null;
@@ -1440,6 +1608,7 @@ export default function DashboardModule({
                         const weekdayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
                         const weekdayIndex = new Date(currentCalendarYear, currentCalendarMonth, dayNum).getDay();
                         const weekdayName = weekdayNames[weekdayIndex];
+                        const timeKey = `${currentCalendarYear}-${currentCalendarMonth}-${dayNum}`;
                         
                         const itemIndex = scheduleItems.findIndex(item => {
                           if (!item || !item.day) return false;
@@ -1453,14 +1622,16 @@ export default function DashboardModule({
                           time: dateTopic.time,
                           notes: dateTopic.notes,
                           isExam: (dateTopic as any).isExam
-                        } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
+                        } : (profile.examDate ? null : (itemIndex !== -1 ? scheduleItems[itemIndex] : null));
                         
                         const cleanInfo = dateTopic ? {
                           subject: "Estudo Intercalado",
                           subtopic: dateTopic.desc
                         } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "", subtopic: "" });
                         const isSelected = !profile.examDate && editingDayIndex === itemIndex && itemIndex !== -1;
-                        const isDone = scheduleItem ? !!completedDays[weekdayName] : false;
+                        const isDone = profile.examDate 
+                          ? !!completedDates[timeKey] 
+                          : (scheduleItem ? !!completedDays[weekdayName] : false);
                         const isExam = scheduleItem && (scheduleItem as any).isExam;
 
                         return (
@@ -1469,16 +1640,14 @@ export default function DashboardModule({
                             onClick={() => {
                               if (isExam) return;
                               if (scheduleItem) {
-                                setSelectedGuideTopic(scheduleItem.day);
-                                let category = "comuns";
-                                if (scheduleItem.color) {
-                                  if (scheduleItem.color.includes("indigo")) category = "legislacao";
-                                  else if (scheduleItem.color.includes("emerald")) category = "didatica";
-                                  else if (scheduleItem.color.includes("purple")) category = "ceara";
-                                  else if (scheduleItem.color.includes("amber")) category = "especifico";
-                                }
-                                setSelectedGuideCategory(category);
-                                setIsStudyGuideOpen(true);
+                                setSelectedCheckInDate({
+                                  year: currentCalendarYear,
+                                  month: currentCalendarMonth,
+                                  day: dayNum,
+                                  timeKey,
+                                  weekdayName,
+                                  scheduleItem
+                                });
                               } else if (!profile.examDate && itemIndex !== -1) {
                                 startEditing(itemIndex);
                               }
@@ -1503,10 +1672,17 @@ export default function DashboardModule({
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setCompletedDays(prev => ({
-                                      ...prev,
-                                      [weekdayName]: !prev[weekdayName]
-                                    }));
+                                    if (profile.examDate) {
+                                      setCompletedDates(prev => ({
+                                        ...prev,
+                                        [timeKey]: !prev[timeKey]
+                                      }));
+                                    } else {
+                                      setCompletedDays(prev => ({
+                                        ...prev,
+                                        [weekdayName]: !prev[weekdayName]
+                                      }));
+                                    }
                                   }}
                                   className={`w-4 h-4 rounded border transition-all flex items-center justify-center shrink-0 ${
                                     isDone
@@ -1553,6 +1729,89 @@ export default function DashboardModule({
                         );
                       })}
                     </div>
+                  </div>
+                ) : profile.examDate ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-1 font-sans">
+                    {studyDatesList.map((date, idx) => {
+                      const dayNum = date.getDate();
+                      const dateTopic = getTopicForDate(date.getFullYear(), date.getMonth(), dayNum);
+                      const weekdayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+                      const weekdayIndex = date.getDay();
+                      const weekdayName = weekdayNames[weekdayIndex];
+                      const timeKey = `${date.getFullYear()}-${date.getMonth()}-${dayNum}`;
+                      
+                      const scheduleItem = dateTopic ? {
+                        day: dateTopic.title,
+                        desc: dateTopic.desc,
+                        color: dateTopic.color,
+                        time: dateTopic.time,
+                        notes: dateTopic.notes,
+                        isExam: (dateTopic as any).isExam
+                      } : null;
+
+                      const isDone = !!completedDates[timeKey];
+                      const isExam = scheduleItem && (scheduleItem as any).isExam;
+                      const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+                      const cleanInfo = scheduleItem 
+                        ? (scheduleItem.desc && scheduleItem.desc.includes(" // ")
+                            ? { subject: scheduleItem.desc.split(" // ")[0].trim(), subtopic: scheduleItem.desc.split(" // ")[1].trim() }
+                            : { subject: "Estudo", subtopic: scheduleItem.desc })
+                        : { subject: "Revisão / Livre", subtopic: "Folga programada ou revisão de pontos fracos" };
+
+                      return (
+                        <div
+                          key={`list-item-${idx}`}
+                          onClick={() => {
+                            if (isExam) return;
+                            if (scheduleItem) {
+                              setSelectedCheckInDate({
+                                year: date.getFullYear(),
+                                month: date.getMonth(),
+                                day: dayNum,
+                                timeKey,
+                                weekdayName,
+                                scheduleItem
+                              });
+                            }
+                          }}
+                          className={`group border rounded-2xl p-4 transition-all text-left cursor-pointer relative ${
+                            isExam 
+                              ? "bg-rose-50 border-rose-300 ring-1 ring-rose-300/30 text-rose-950 animate-pulse"
+                              : "bg-white border-slate-150 hover:border-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-display font-bold text-xs text-slate-800 flex items-center gap-1.5 font-sans">
+                              <span className={`w-2 h-2 rounded-full ${scheduleItem?.color || "bg-emerald-500"}`}></span>
+                              {formattedDate} - {weekdayName}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {scheduleItem?.time || "Meta Livre"}
+                            </span>
+                          </div>
+                          
+                          <p className="font-semibold text-slate-700 text-xs mb-1.5 line-clamp-3 font-sans">
+                            {isExam ? "PROVA! 🏁" : cleanInfo.subject}
+                          </p>
+                          <p className="text-slate-500 text-xxs font-sans">
+                            {isExam ? "Hoje é o grande dia da sua aprovação no Concurso Seduc-CE!" : cleanInfo.subtopic}
+                          </p>
+                          
+                          {scheduleItem?.notes && (
+                            <p className="text-slate-500 text-[10px] line-clamp-2 bg-slate-50 p-1.5 rounded-md mt-2 italic font-sans">
+                              {scheduleItem.notes}
+                            </p>
+                          )}
+
+                          {isDone && (
+                            <span className="absolute top-2.5 right-2.5 bg-emerald-50 text-emerald-700 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-emerald-100">
+                              Feito!
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-1 font-sans">
@@ -1972,6 +2231,7 @@ export default function DashboardModule({
                       {/* Render all days of the current month */}
                       {Array.from({ length: new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate() }).map((_, i) => {
                         const dayNum = i + 1;
+                        const timeKey = `${currentCalendarYear}-${currentCalendarMonth}-${dayNum}`;
                         
                         // Check if we have a tailored topic or exam date
                         const dateTopic = getTopicForDate(currentCalendarYear, currentCalendarMonth, dayNum);
@@ -1993,14 +2253,16 @@ export default function DashboardModule({
                           time: dateTopic.time,
                           notes: dateTopic.notes,
                           isExam: (dateTopic as any).isExam
-                        } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
+                        } : (profile.examDate ? null : (itemIndex !== -1 ? scheduleItems[itemIndex] : null));
                         
                         const cleanInfo = dateTopic ? {
                           subject: "Estudo Intercalado",
                           subtopic: dateTopic.desc
                         } : (scheduleItem ? getCleanTopicInfo(scheduleItem.day, scheduleItem.color) : { subject: "", subtopic: "" });
                         const isSelected = !profile.examDate && editingDayIndex === itemIndex && itemIndex !== -1;
-                        const isDone = scheduleItem ? !!completedDays[weekdayName] : false;
+                        const isDone = profile.examDate 
+                          ? !!completedDates[timeKey] 
+                          : (scheduleItem ? !!completedDays[weekdayName] : false);
                         const isExam = scheduleItem && (scheduleItem as any).isExam;
 
                         return (
@@ -2009,17 +2271,14 @@ export default function DashboardModule({
                             onClick={() => {
                               if (isExam) return;
                               if (scheduleItem) {
-                                setSelectedGuideTopic(scheduleItem.day);
-                                // Determine category based on color or contents
-                                let category = "comuns";
-                                if (scheduleItem.color) {
-                                  if (scheduleItem.color.includes("indigo")) category = "legislacao";
-                                  else if (scheduleItem.color.includes("emerald")) category = "didatica";
-                                  else if (scheduleItem.color.includes("purple")) category = "ceara";
-                                  else if (scheduleItem.color.includes("amber")) category = "especifico";
-                                }
-                                setSelectedGuideCategory(category);
-                                setIsStudyGuideOpen(true);
+                                setSelectedCheckInDate({
+                                  year: currentCalendarYear,
+                                  month: currentCalendarMonth,
+                                  day: dayNum,
+                                  timeKey,
+                                  weekdayName,
+                                  scheduleItem
+                                });
                               } else if (!profile.examDate && itemIndex !== -1) {
                                 startEditing(itemIndex);
                               }
@@ -2045,10 +2304,17 @@ export default function DashboardModule({
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation(); // prevent opening the editor
-                                    setCompletedDays(prev => ({
-                                      ...prev,
-                                      [weekdayName]: !prev[weekdayName]
-                                    }));
+                                    if (profile.examDate) {
+                                      setCompletedDates(prev => ({
+                                        ...prev,
+                                        [timeKey]: !prev[timeKey]
+                                      }));
+                                    } else {
+                                      setCompletedDays(prev => ({
+                                        ...prev,
+                                        [weekdayName]: !prev[weekdayName]
+                                      }));
+                                    }
                                   }}
                                   className={`w-4 h-4 rounded border transition-all flex items-center justify-center shrink-0 ${
                                     isDone
@@ -2530,6 +2796,218 @@ export default function DashboardModule({
         );
       })()}
 
+      {/* Daily Check-In & Topic Detail Modal */}
+      {selectedCheckInDate && (() => {
+        const { year, month, day, timeKey, weekdayName, scheduleItem } = selectedCheckInDate;
+        const itemsList = scheduleItem.items || [];
+        const isFullyDone = !!completedDates[timeKey];
+        const formattedDate = `${weekdayName}, ${day} de ${new Date(year, month, day).toLocaleDateString("pt-BR", { month: "long" })} de ${year}`;
+        
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs overflow-y-auto">
+            <div className="bg-white border border-slate-100 text-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
+              
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/60">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`p-2.5 rounded-xl border shrink-0 ${isFullyDone ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-sky-50 border-sky-100 text-sky-600"}`}>
+                    {isFullyDone ? <CheckCircle className="w-5 h-5" /> : <CalendarDays className="w-5 h-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                      Check-in Diário de Estudos 🎯
+                    </span>
+                    <h3 className="font-display font-bold text-sm text-slate-900 mt-1 line-clamp-1">
+                      {formattedDate}
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedCheckInDate(null)}
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-xl bg-slate-150/40 hover:bg-slate-100 transition-all cursor-pointer shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto font-sans">
+                
+                {/* Main Day Program Info */}
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-150/50">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white ${scheduleItem.color || "bg-sky-600"}`}>
+                      {scheduleItem.time || "19:00 - 21:00"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">ID: {timeKey}</span>
+                  </div>
+                  <h4 className="font-bold text-sm text-slate-900 leading-tight">
+                    {scheduleItem.title || "Estudo Diário"}
+                  </h4>
+                  <p className="text-xs text-slate-600 font-medium">
+                    {scheduleItem.desc}
+                  </p>
+                  {scheduleItem.notes && (
+                    <div className="text-xxs text-slate-500 bg-white p-3 rounded-xl border border-slate-100 whitespace-pre-line leading-relaxed">
+                      {scheduleItem.notes}
+                    </div>
+                  )}
+                </div>
+
+                {/* Subtopics and Items Checklist */}
+                <div className="space-y-3">
+                  <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                    <ListChecks className="w-4 h-4 text-emerald-600" />
+                    Tópicos de Estudo para Concluir:
+                  </h5>
+
+                  {itemsList.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                      Sem tópicos formais de edital cadastrados para este dia.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {itemsList.map((it: any, idx: number) => {
+                        const isItemDone = !!completedDateItems[timeKey]?.[it.label];
+                        const categoryBadgeColor = it.category === "legislacao" ? "bg-indigo-50 text-indigo-700 border-indigo-150" :
+                                                   it.category === "didatica" ? "bg-emerald-50 text-emerald-700 border-emerald-150" :
+                                                   it.category === "ceara" ? "bg-purple-50 text-purple-700 border-purple-150" :
+                                                   it.category === "especifico" ? "bg-amber-50 text-amber-700 border-amber-150" :
+                                                   "bg-sky-50 text-sky-700 border-sky-150";
+
+                        return (
+                          <div key={idx} className={`p-4 rounded-2xl border transition-all ${isItemDone ? "bg-emerald-50/15 border-emerald-200" : "bg-white border-slate-200 hover:border-slate-300"}`}>
+                            <div className="flex items-start gap-3 justify-between">
+                              <div className="flex items-start gap-2.5 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDateItemCompletion(timeKey, it.label, itemsList)}
+                                  className={`w-5 h-5 rounded-md border mt-0.5 transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+                                    isItemDone
+                                      ? "bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-500/20"
+                                      : "bg-white border-slate-300 hover:border-emerald-500 text-transparent"
+                                  }`}
+                                >
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                                
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-bold text-xs text-slate-800">
+                                      {it.label}
+                                    </span>
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${categoryBadgeColor}`}>
+                                      {it.category === "legislacao" ? "Legislação" :
+                                       it.category === "didatica" ? "Didática" :
+                                       it.category === "ceara" ? "Especificidades CE" :
+                                       it.category === "especifico" ? `Específica: ${profile.discipline}` : "Geral"}
+                                    </span>
+                                  </div>
+                                  <div className="text-xxs text-slate-500 leading-normal pl-0.5">
+                                    {it.subtopics && it.subtopics.map((sub: string, sidx: number) => (
+                                      <div key={sidx} className="flex gap-1.5 items-start mt-1">
+                                        <span className="text-emerald-500">•</span>
+                                        <span>{sub}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Interactive Shortcut Tools for this specific topic */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  title="Ver Guia de Estudos Completo"
+                                  onClick={() => {
+                                    setSelectedGuideTopic(it.topicName);
+                                    setSelectedGuideCategory(it.category);
+                                    setIsStudyGuideOpen(true);
+                                    setSelectedCheckInDate(null);
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
+                                >
+                                  <BookOpenCheck className="w-4 h-4" />
+                                </button>
+                                
+                                <button
+                                  title="Gerar Questões no Simulador"
+                                  onClick={() => {
+                                    onTopicClick(it.topicName);
+                                    onChangeModule("simulator");
+                                    setSelectedCheckInDate(null);
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-all cursor-pointer"
+                                >
+                                  <Brain className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  title="Perguntar ao Mentor IA"
+                                  onClick={() => {
+                                    onTopicClick(it.topicName);
+                                    onChangeModule("chat");
+                                    setSelectedCheckInDate(null);
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer"
+                                >
+                                  <Sparkles className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Master Full Completion Switch */}
+                <div className="p-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl flex items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-slate-800 block">Concluir Todo o Dia?</span>
+                    <span className="text-[10px] text-slate-500 leading-none">Marcar todos os tópicos planejados para hoje como estudados de uma só vez.</span>
+                  </div>
+                  
+                  <button
+                    onClick={() => toggleFullDateCompletion(timeKey, itemsList)}
+                    className={`text-xs font-bold py-2 px-4 rounded-xl border transition-all flex items-center gap-2 cursor-pointer ${
+                      isFullyDone
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-sm shadow-emerald-500/20"
+                        : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
+                    }`}
+                  >
+                    {isFullyDone ? (
+                      <>
+                        <CheckSquare className="w-4 h-4 fill-white text-emerald-600" />
+                        <span>Dia Concluído! ✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-4 h-4 rounded border border-slate-300 shrink-0 bg-white" />
+                        <span>Concluir Dia</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCheckInDate(null)}
+                  className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Print Instructions / Redirect Helper Modal */}
       {isPrintModalOpen && (() => {
         const inIframe = typeof window !== "undefined" && window.self !== window.top;
@@ -2707,8 +3185,8 @@ export default function DashboardModule({
             <div className="text-right">
               <span className="inline-block text-[10px] font-bold font-sans bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1 rounded-md uppercase tracking-wider">
                 {profile.examDate 
-                  ? `${new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')} - ${new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '')}`.toUpperCase()
-                  : "JULHO DE 2026"
+                  ? `${new Date((profile.studyStartDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]) + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')} - ${new Date(profile.examDate + "T12:00:00").toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '')}`.toUpperCase()
+                  : "ESTUDO VIGENTE"
                 }
               </span>
               <p className="text-[9px] text-slate-400 font-mono mt-1">Ref: FUNECE/SEDUC</p>
@@ -2782,7 +3260,8 @@ export default function DashboardModule({
               {(() => {
                 const printDates: Date[] = [];
                 if (profile.examDate) {
-                  const start = new Date((profile.studyStartDate || "2026-07-09") + "T12:00:00");
+                  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                  const start = new Date((profile.studyStartDate || todayStr) + "T12:00:00");
                   start.setHours(0, 0, 0, 0);
                   const end = new Date(profile.examDate + "T12:00:00");
                   end.setHours(0, 0, 0, 0);
@@ -2821,7 +3300,7 @@ export default function DashboardModule({
                     time: dateTopic.time,
                     notes: dateTopic.notes,
                     isExam: (dateTopic as any).isExam
-                  } : (itemIndex !== -1 ? scheduleItems[itemIndex] : null);
+                  } : (profile.examDate ? null : (itemIndex !== -1 ? scheduleItems[itemIndex] : null));
 
                   const isExam = scheduleItem && (scheduleItem as any).isExam;
 
@@ -2836,17 +3315,9 @@ export default function DashboardModule({
                       const parts = scheduleItem.desc.split(" // ");
                       subjectVal = parts[0].trim();
                       subtopicVal = parts[1].trim();
-                    } else if (scheduleItem.desc) {
-                      if (scheduleItem.desc.toLowerCase().includes("simulado")) {
-                        subjectVal = "Simulado Geral";
-                        subtopicVal = scheduleItem.desc;
-                      } else if (scheduleItem.desc.toLowerCase().includes("revisão") || scheduleItem.desc.toLowerCase().includes("descanso")) {
-                        subjectVal = "Revisão / Descanso";
-                        subtopicVal = scheduleItem.desc;
-                      } else {
-                        subjectVal = "Geral";
-                        subtopicVal = scheduleItem.desc;
-                      }
+                    } else {
+                      subjectVal = scheduleItem.day || "Geral";
+                      subtopicVal = scheduleItem.desc || "";
                     }
                   }
 

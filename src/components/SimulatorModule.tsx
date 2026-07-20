@@ -55,6 +55,42 @@ export default function SimulatorModule({
     "Ajustando nível de complexidade teórico-prático..."
   ];
 
+  const getTargetDisciplineForTopic = (topicName: string, category: string, userDiscipline: string): string => {
+    if (category === "especifico") {
+      return userDiscipline;
+    }
+    if (category === "comuns") {
+      return "Língua Portuguesa";
+    }
+    if (category === "legislacao") {
+      return "Legislação Educacional e Administração Pública";
+    }
+    if (category === "didatica") {
+      return "Temas Educacionais e Pedagógicos (Didática)";
+    }
+    if (category === "ceara") {
+      return "Leitura e Interpretação de Dados e Indicadores Educacionais";
+    }
+    return "Didática e Legislação";
+  };
+
+  const getHierarchyForTopic = (topicName: string, category: string, userDiscipline: string): string => {
+    switch (category) {
+      case "comuns":
+        return `Conhecimentos Básicos -> Língua Portuguesa -> ${topicName}`;
+      case "legislacao":
+        return `Conhecimentos Básicos -> Administração Pública e Legislação Básica -> ${topicName}`;
+      case "didatica":
+        return `Conhecimentos Básicos -> Temas Educacionais e Pedagógicos (Didática) -> ${topicName}`;
+      case "ceara":
+        return `Conhecimentos Básicos -> Leitura e Interpretação de Dados e Indicadores Educacionais -> ${topicName}`;
+      case "especifico":
+        return `Conhecimentos Específicos -> ${userDiscipline} -> ${topicName}`;
+      default:
+        return `Conhecimentos Gerais -> ${topicName}`;
+    }
+  };
+
   const triggerPreFetch = async (topicName: string) => {
     if (preFetchLoading) return;
     if (preFetchedQuestion && preFetchedTopic === topicName) return;
@@ -68,6 +104,11 @@ export default function SimulatorModule({
     }
 
     try {
+      const matchedTopic = topics.find(t => t.name === topicName);
+      const category = matchedTopic ? matchedTopic.category : "mixed";
+      const targetDiscipline = getTargetDisciplineForTopic(topicName, category, profile.discipline);
+      const hierarchy = getHierarchyForTopic(topicName, category, profile.discipline);
+
       const response = await fetch(fetchUrl, {
         method: "POST",
         headers: { 
@@ -76,8 +117,12 @@ export default function SimulatorModule({
         },
         body: JSON.stringify({
           topic: topicName,
-          discipline: profile.discipline,
-          banca: profile.banca
+          topicId: matchedTopic?.id || "",
+          category: category,
+          discipline: targetDiscipline,
+          userDiscipline: profile.discipline,
+          banca: profile.banca,
+          hierarchy: hierarchy
         })
       });
 
@@ -201,6 +246,11 @@ export default function SimulatorModule({
     }
 
     try {
+      const matchedTopic = topics.find(t => t.name === actualTopicName);
+      const category = matchedTopic ? matchedTopic.category : selectedCategory;
+      const targetDiscipline = getTargetDisciplineForTopic(actualTopicName, category, profile.discipline);
+      const hierarchy = getHierarchyForTopic(actualTopicName, category, profile.discipline);
+
       const response = await fetch(fetchUrl, {
         method: "POST",
         headers: { 
@@ -209,8 +259,12 @@ export default function SimulatorModule({
         },
         body: JSON.stringify({
           topic: actualTopicName,
-          discipline: profile.discipline,
-          banca: profile.banca
+          topicId: matchedTopic?.id || actualTopicId,
+          category: category,
+          discipline: targetDiscipline,
+          userDiscipline: profile.discipline,
+          banca: profile.banca,
+          hierarchy: hierarchy
         })
       });
 

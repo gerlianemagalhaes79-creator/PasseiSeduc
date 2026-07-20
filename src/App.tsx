@@ -106,6 +106,8 @@ export default function App() {
     setSquareLogo("");
     setRectangularLogo("");
     setEditalText("Edital oficial SEDUC-CE de 2026. Prioriza LDB atualizada, Plano Nacional de Educação, Estatuto do Magistério do Ceará, Didática Geral, metodologias ativas e avaliação formativa.");
+    
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
     setProfile({
       discipline: "Matemática",
       banca: "FUNECE",
@@ -116,7 +118,7 @@ export default function App() {
       totalCorrect: 0,
       totalSeconds: 0,
       examDate: "2026-09-26",
-      studyStartDate: "2026-07-09",
+      studyStartDate: todayStr,
       history: []
     });
     setConfirmReset(false);
@@ -133,12 +135,13 @@ export default function App() {
 
   const [profile, setProfile] = useState<UserProfile>(() => {
     const saved = localStorage.getItem("ia_aprova_profile");
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed.examDate && !parsed.studyStartDate) {
-          // Default to July 9th, 2026 or current date if 2026 is today
-          parsed.studyStartDate = "2026-07-09";
+          // Default to current date
+          parsed.studyStartDate = todayStr;
           localStorage.setItem("ia_aprova_profile", JSON.stringify(parsed));
         }
         if (!parsed.history || parsed.history.length === 0) {
@@ -163,7 +166,7 @@ export default function App() {
       totalCorrect: 10,
       totalSeconds: 2400,
       examDate: "2026-09-26",
-      studyStartDate: "2026-07-09",
+      studyStartDate: todayStr,
       history: [
         { date: "07/07", score: 4, total: 6, topic: "Didática Geral" },
         { date: "08/07", score: 5, total: 7, topic: "LDB e LRF" },
@@ -202,6 +205,18 @@ export default function App() {
       } catch (e) {}
     }
     return "2026-09-26";
+  });
+
+  const [studyStartDate, setStudyStartDate] = useState<string>(() => {
+    const saved = localStorage.getItem("ia_aprova_profile");
+    if (saved) {
+      try {
+        const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        return JSON.parse(saved).studyStartDate || todayStr;
+      } catch (e) {}
+    }
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    return todayStr;
   });
 
   const [squareLogo, setSquareLogo] = useState<string>(() => {
@@ -244,6 +259,7 @@ export default function App() {
       discipline,
       banca,
       examDate,
+      studyStartDate,
       squareLogo,
       rectangularLogo
     }));
@@ -297,7 +313,7 @@ export default function App() {
     }
 
     setTopics(freshList);
-  }, [discipline, banca, examDate, squareLogo, rectangularLogo, profile?.hasEdital, profile?.editalTopics]);
+  }, [discipline, banca, examDate, studyStartDate, squareLogo, rectangularLogo, profile?.hasEdital, profile?.editalTopics]);
 
   const handleSquareLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -425,6 +441,7 @@ export default function App() {
     return (
       <OnboardingModule
         onComplete={(data) => {
+          const startDt = data.studyStartDate || (data.examDate ? new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : undefined);
           const newProfile: UserProfile = {
             name: data.name,
             gender: data.gender,
@@ -439,7 +456,7 @@ export default function App() {
             totalCorrect: 0,
             totalSeconds: 0,
             examDate: data.examDate,
-            studyStartDate: data.examDate ? new Date().toISOString().split('T')[0] : undefined,
+            studyStartDate: startDt,
             hasEdital: data.hasEdital,
             editalFileName: data.editalFileName,
             editalTopics: data.editalTopics,
@@ -453,6 +470,12 @@ export default function App() {
           };
           setProfile(newProfile);
           setDiscipline(data.discipline);
+          if (data.examDate) {
+            setExamDate(data.examDate);
+          }
+          if (startDt) {
+            setStudyStartDate(startDt);
+          }
           setOnboarded(true);
         }}
       />
@@ -818,20 +841,34 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                          Data Prevista da Prova (Edital não publicado)
-                        </label>
-                        <input
-                          type="date"
-                          value={examDate}
-                          onChange={(e) => setExamDate(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
-                        />
-                        <p className="text-slate-400 text-[10px] mt-1.5 leading-normal">
-                          Como o edital oficial ainda não foi publicado, você pode estimar ou ajustar a data prevista da prova. O sistema irá redistribuir as metas do seu cronograma de forma inteligente e proporcional até o dia escolhido.
-                        </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Data de Início dos Estudos
+                          </label>
+                          <input
+                            type="date"
+                            value={studyStartDate}
+                            onChange={(e) => setStudyStartDate(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Data Prevista da Prova (Edital não publicado)
+                          </label>
+                          <input
+                            type="date"
+                            value={examDate}
+                            onChange={(e) => setExamDate(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-100 focus:border-emerald-500 rounded-xl p-3 text-sm text-slate-700 focus:outline-none"
+                          />
+                        </div>
                       </div>
+                      <p className="text-slate-400 text-[10px] mt-1.5 leading-normal">
+                        Como o edital oficial ainda não foi publicado, você pode estimar ou ajustar a data prevista da prova e a data de início de estudos. O sistema irá redistribuir as metas do seu cronograma de forma inteligente, proporcional e dinâmica dentro desse período.
+                      </p>
 
                       {/* Upload de Logos */}
                       <div className="border-t border-slate-100 pt-5 mt-5">
