@@ -760,15 +760,11 @@ Responda em formato JSON informando se a questão é válida e a justificativa t
 
   } catch (error: any) {
     const parsed = parseGeminiError(error);
-    console.error("Gemini consolidated question generation error:", parsed);
-    return res.status(parsed.status).json({
-      success: false,
-      error: parsed.message,
-      errorType: parsed.errorType,
-      details: parsed.details,
-      status: parsed.status,
-      stack: error.stack || "",
+    console.error("Gemini consolidated question generation error (serving resilient fallback):", parsed);
+    return res.json({
+      success: true,
       isFallback: true,
+      warning: `Resposta gerada via contingência local (${parsed.errorType}: ${parsed.details})`,
       data: getFallbackQuestion(resolvedTopic, resolvedDiscipline, currentBanca)
     });
   }
@@ -981,14 +977,59 @@ Diretrizes adicionais:
 
   } catch (error: any) {
     const parsed = parseGeminiError(error);
-    console.error("Gemini chat error:", parsed);
-    return res.status(parsed.status).json({
-      success: false,
-      error: parsed.message,
-      errorType: parsed.errorType,
-      details: parsed.details,
-      status: parsed.status,
-      stack: error.stack || ""
+    console.error("Gemini chat error (serving resilient fallback):", parsed);
+
+    const lastUserMsg = messages && messages.length > 0 ? messages[messages.length - 1].content : "";
+    let replyText = "";
+    
+    const dateToUse = clientDateStr || new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const capitalizedToday = dateToUse.charAt(0).toUpperCase() + dateToUse.slice(1);
+    
+    if (lastUserMsg.includes("previsto") || lastUserMsg.includes("hoje")) {
+      if (todayCalendarTopic) {
+        replyText = `### Meta de Hoje: **${todayCalendarTopic.title || "Meta de Hoje"}** 📅\n\nNo seu cronograma gerado para hoje, a meta de estudos é:\n* **Assuntos:** ${todayCalendarTopic.desc || ""}\n* **Horário:** ${todayCalendarTopic.time || "19:00 - 22:00"}\n* **Status Atual:** ${isTodayCompleted ? "✅ Concluído!" : "⏳ Pendente"}\n\n**Orientações para o estudo de hoje:**\n${todayCalendarTopic.notes || ""}\n\n**Como estudar estes assuntos hoje:**\n1. Use os Guias de Estudo rápidos na aba de Mapeamento para revisar as bases teóricas.\n2. Vá até o **Simulador** e responda a pelo menos 5 a 10 questões focadas da banca **${banca}** sobre estes temas.\n3. Se encontrar dificuldades ou quiser destrinchar alguma pegadinha, digite sua dúvida aqui!`;
+      } else {
+        const todayItem = (scheduleItems || []).find((item: any) => capitalizedToday.toLowerCase().includes((item.day || "").toLowerCase()));
+        
+        if (todayItem) {
+          const isDone = completedDays && completedDays[todayItem.day];
+          replyText = `### Meta de Hoje: **${todayItem.day}** 📅\n\nNo seu cronograma personalizado, a meta para hoje é:\n* **Assunto:** ${todayItem.desc}\n* **Foco/Peso:** ${todayItem.pct || "Alta relevância"}\n* **Status Atual:** ${isDone ? "✅ Concluído!" : "⏳ Pendente"}\n\n**Como estudar este assunto hoje:**\n1. Use o Guia de Estudos rápido e revise as bases teóricas.\n2. Vá até o **Simulador** e responda a pelo menos 5 questões focadas da banca **${banca}** sobre este tema.\n3. Se encontrar dificuldades, me avise aqui para destrincharmos as pegadinhas!`;
+        } else {
+          const firstPending = (scheduleItems || []).find((item: any) => completedDays && !completedDays[item.day]);
+          if (firstPending) {
+            replyText = `### Meta Recomendada para Hoje 📅\n\nIdentifiquei que sua próxima meta pendente é de **${firstPending.day}**:\n* **Assunto:** ${firstPending.desc}\n\nQue tal começarmos por ela hoje para manter seu ritmo impecável? Vá até o painel principal para marcar como concluída assim que terminar!`;
+          } else {
+            replyText = `### Meta de Estudos de Hoje 📅\n\nDe acordo com o seu calendário, todas as metas semanais do seu cronograma de estudos estão em dia! \n\nO foco sugerido de hoje é consolidar seu aprendizado na área de **${discipline}** resolvendo simulados gerais ou revisando seus flashcards.`;
+          }
+        }
+      }
+    } else if (lastUserMsg.includes("conteúdo") || lastUserMsg.includes("material")) {
+      const activeTopic = topic || "Assuntos de hoje";
+      replyText = `### Onde encontrar o melhor conteúdo? 📚\n\nPara o assunto de hoje (**${activeTopic}**), recomendo as seguintes fontes oficiais e de alta qualidade:\n\n* **Legislação e Diretrizes Educacionais:** Sempre estude pela legislação "seca" atualizada (direto nos sites do Planalto ou da Seduc-CE). Para a LDB e PNE, priorize os resumos comentados.\n* **Didática Geral e Currículo do Ceará:** O documento oficial do *Documento Curricular do Ceará (DCRC)* está disponível no portal da SEDUC-CE. Na didática geral, foque nas tendências pedagógicas (Libâneo e Saviani).\n* **Parte Específica de ${discipline}:** Utilize os materiais de apoio e as diretrizes curriculares do Ensino Médio da BNCC, que são a principal referência da banca **${banca}**.\n\nLembre-se de que os nossos guias de estudo rápidos na aba de Mapeamento já contêm resumos direcionados e dicas de pegadinhas para economizar seu tempo!`;
+    } else if (lastUserMsg.includes("paramos") || lastUserMsg.includes("onde paramos")) {
+      const completedCount = completedTopics?.length || 0;
+      const pendingCount = pendingTopics?.length || 0;
+      const totalCount = completedCount + pendingCount;
+      const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      
+      replyText = `### Onde paramos? 📈\n\nAnalisando o seu progresso no sistema preparatório:\n* **Assuntos Concluídos:** ${completedCount} de ${totalCount} (${pct}% concluído)\n* **Meta Ativa de Foco:** **${topic || "Não definida"}**\n\n**Resumo do Progresso:**\n${completedTopics && completedTopics.length > 0 
+        ? `Os últimos assuntos que você marcou como concluídos incluem: ${completedTopics.slice(-3).map((t: string) => `**${t}**`).join(", ")}.`
+        : "Você está iniciando sua jornada agora! Excelente momento para dar o primeiro passo."}\n\nPara continuar avançando, o próximo tópico recomendado na sua lista de pendentes é o seu assunto de foco atual. Pronto para fazer mais algumas questões?`;
+    } else if (lastUserMsg.includes("atrasado") || lastUserMsg.includes("pendente")) {
+      const pendingDays = (scheduleItems || []).filter((item: any) => completedDays && !completedDays[item.day]);
+      if (pendingDays.length > 0) {
+        replyText = `### Análise de Assuntos Atrasados/Pendentes ⏳\n\nIdentifiquei que você tem **${pendingDays.length} metas pendentes** no seu cronograma:\n\n${pendingDays.map((p: any) => `* **${p.day}**: ${p.desc}`).join("\n")}\n\n**Plano de Ação para Recuperação:**\n1. **Não se desespere:** É normal ter imprevistos na rotina. O importante é a constância.\n2. **Fracione o atraso:** Tente estudar uma meta pendente e meia a cada dia (adicionando cerca de 30 a 45 minutos de estudo diário).\n3. **Foque nas questões:** Resolva simulados rápidos desses assuntos para ver se você já domina a teoria, acelerando o processo.`;
+      } else {
+        replyText = `### Parabéns, Professor(a)! 🎉\n\nFiz uma verificação completa e **você não tem nenhum assunto ou dia atrasado no seu cronograma**! Todas as metas semanais planejadas estão marcadas como concluídas ou em dia. \n\nContinue com essa disciplina incrível. Esse ritmo constante é o que garante a nomeação!`;
+      }
+    } else {
+      replyText = `Olá! Como estou operando no modo de contingência local, quero destacar que para **${discipline}** sob a perspectiva da banca **${banca}**, é fundamental compreender as bases pedagógicas da LDB e do Currículo do Ceará. \n\nGostaria de focar em algum ponto específico das metas do PNE ou nos artigos da LDB relativos au seu campo de atuação?`;
+    }
+
+    return res.json({
+      success: true,
+      isFallback: true,
+      text: replyText
     });
   }
 });
@@ -1075,14 +1116,9 @@ Esse documento deve conter instruções como:
 
   } catch (err: any) {
     const parsed = parseGeminiError(err);
-    console.error("Analysis error (falling back to offline DNA):", parsed);
-    return res.status(parsed.status).json({
-      success: false,
-      error: parsed.message,
-      errorType: parsed.errorType,
-      details: parsed.details,
-      status: parsed.status,
-      stack: err.stack || "",
+    console.error("Analysis error (serving resilient fallback):", parsed);
+    return res.json({
+      success: true,
       isFallback: true,
       text: getFallbackAnalysis(banca, query)
     });
