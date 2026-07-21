@@ -515,8 +515,14 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
          })
       });
 
-      const result = await response.json();
-      if (result.success && result.text) {
+      let result: any = {};
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        result = { error: response.statusText || "Erro ao ler a resposta do servidor" };
+      }
+
+      if (response.ok && result.success && result.text) {
         setMessages((prev) => [
           ...prev,
           {
@@ -528,21 +534,62 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
         ]);
         setIsFallback(!!result.isFallback);
       } else {
-        throw new Error("Erro de resposta do servidor");
+        const httpStatus = response.status || result.status || 500;
+        const errorType = result.errorType || "SERVER_ERROR";
+        const errorDetails = result.details || "Ocorreu uma falha na comunicação com o servidor.";
+        const geminiMessage = result.error || result.message || response.statusText || "Sem detalhes adicionais.";
+        const stackTrace = result.stack || "Sem stack trace disponível.";
+
+        console.error("[API Chat Error Diagnostics]", {
+          httpStatus,
+          errorType,
+          errorDetails,
+          geminiMessage,
+          stackTrace
+        });
+
+        let userExplanation = `### ⚠️ Falha na Conexão com o Professor Mentor (Erro ${httpStatus})\n\n`;
+        userExplanation += `Não foi possível obter uma resposta do Gemini no momento.\n\n`;
+        userExplanation += `* **Motivo:** ${errorDetails}\n`;
+        userExplanation += `* **Código de Erro:** \`${errorType}\` (HTTP ${httpStatus})\n`;
+        userExplanation += `* **Mensagem da API:** *"${geminiMessage}"*\n\n`;
+        userExplanation += `*Dica: Se este erro persistir na produção (Vercel), certifique-se de que a chave \`GEMINI_API_KEY\` foi adicionada no painel de Environment Variables do seu projeto no Vercel e que as rotas estão corretas.*`;
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: userExplanation,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+        setIsFallback(true);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Chat error:", err);
-      // Fallback message locally
+      const httpStatus = err.status || 500;
+      let errorType = "NETWORK_ERROR";
+      let errorDetails = "Erro de conexão de rede ou rota da API inacessível.";
+
+      if (err.message && err.message.toLowerCase().includes("failed to fetch")) {
+        errorType = "API_ROUTE_UNAVAILABLE";
+        errorDetails = "A rota da API '/api/chat' não pôde ser contatada. Verifique se o servidor backend está online e se as rotas '/api/*' estão configuradas corretamente.";
+      }
+
+      let userExplanation = `### ⚠️ Erro de Rede ou Rota Unavaliável (Erro ${httpStatus})\n\n`;
+      userExplanation += `Não conseguimos nos conectar com o servidor preparatório.\n\n`;
+      userExplanation += `* **Motivo:** ${errorDetails}\n`;
+      userExplanation += `* **Tipo de Falha:** \`${errorType}\`\n`;
+      userExplanation += `* **Mensagem Original:** *"${err.message || err.toString()}"*\n\n`;
+      userExplanation += `*Se estiver executando no Vercel, confirme se o arquivo \`vercel.json\` foi processado corretamente.*`;
+
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: `Professor(a), tive uma pequena oscilação na conexão com os servidores do Gemini. Mas não se preocupe! 
-
-Deixe-me propor um desafio ativo baseado na **LDB**: O artigo 4º prevê que o dever do Estado com a educação escolar pública será efetivado mediante a garantia de educação básica obrigatória e gratuita dos 4 aos 17 anos de idade. 
-
-Você sabe me dizer quais etapas do ensino compõem essa faixa obrigatória? Vamos exercitar isso!`,
+          content: userExplanation,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);

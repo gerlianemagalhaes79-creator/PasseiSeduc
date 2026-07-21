@@ -129,6 +129,53 @@ function getGeminiClient(): GoogleGenAI | null {
   return aiClient;
 }
 
+// Intelligent Gemini API error parser to satisfy user-requested diagnostics
+function parseGeminiError(error: any) {
+  const status = error.status || error.statusCode || error.status_code || (error.response ? error.response.status : undefined);
+  const message = error.message || (error.response ? error.response.statusText : "") || String(error);
+  const stack = error.stack || "";
+  
+  let errorType = "UNKNOWN";
+  let details = "Erro desconhecido na comunicação com os servidores do Gemini.";
+
+  if (!process.env.GEMINI_API_KEY) {
+    errorType = "API_KEY_MISSING";
+    details = "API Key ausente. A variável de ambiente GEMINI_API_KEY não está definida nas configurações da aplicação.";
+    return { status: 401, message, stack, errorType, details, originalError: "GEMINI_API_KEY_UNDEFINED" };
+  }
+
+  const lowercaseMsg = message.toLowerCase();
+
+  if (status === 401 || lowercaseMsg.includes("api_key_invalid") || lowercaseMsg.includes("invalid api key") || lowercaseMsg.includes("api key not valid") || lowercaseMsg.includes("key invalid") || lowercaseMsg.includes("api key invalid") || lowercaseMsg.includes("invalid_key")) {
+    errorType = "API_KEY_INVALID";
+    details = "API Key inválida. A credencial GEMINI_API_KEY configurada não foi reconhecida ou está incorreta nos servidores do Gemini.";
+  } else if (status === 403 || lowercaseMsg.includes("auth") || lowercaseMsg.includes("forbidden") || lowercaseMsg.includes("permission denied")) {
+    errorType = "AUTH_FAILURE";
+    details = "Falha de autenticação ou permissão negada. O acesso aos servidores do Gemini foi bloqueado ou proibido para o seu projeto.";
+  } else if (status === 429 || lowercaseMsg.includes("quota") || lowercaseMsg.includes("rate limit") || lowercaseMsg.includes("resource_exhausted") || lowercaseMsg.includes("limit")) {
+    errorType = "RATE_LIMIT";
+    details = "Limite de requisições excedido (Quota). O limite de chamadas da sua chave do Gemini foi atingido para este período.";
+  } else if (status === 404 || lowercaseMsg.includes("not found") || lowercaseMsg.includes("no exist") || lowercaseMsg.includes("route") || lowercaseMsg.includes("endpoint")) {
+    errorType = "ROUTE_NOT_FOUND";
+    details = "Rota inexistente ou modelo indisponível. O endpoint ou o modelo solicitado não existe ou está temporariamente offline.";
+  } else if (status === 503 || status === 504 || lowercaseMsg.includes("timeout") || lowercaseMsg.includes("deadline") || lowercaseMsg.includes("timed out") || lowercaseMsg.includes("etimedout") || lowercaseMsg.includes("delay")) {
+    errorType = "TIMEOUT";
+    details = "Tempo limite de conexão (Timeout) atingido. A solicitação demorou mais que o esperado para responder.";
+  } else if (status >= 500 || lowercaseMsg.includes("internal server error") || lowercaseMsg.includes("server error")) {
+    errorType = "INTERNAL_ERROR";
+    details = "Erro interno nos servidores do Gemini. Ocorreu uma instabilidade interna temporária do lado do Google.";
+  }
+
+  return {
+    status: status || 500,
+    message,
+    stack,
+    errorType,
+    details,
+    originalError: error.toString()
+  };
+}
+
 // Helper function to call Gemini models with robust retries and model fallback cascading
 async function generateContentWithRetry(
   ai: GoogleGenAI,
@@ -140,8 +187,8 @@ async function generateContentWithRetry(
   maxRetries = 1
 ): Promise<any> {
   const modelsToTry = options.model 
-    ? [options.model, "gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"] 
-    : ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"];
+    ? [options.model, "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"] 
+    : ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"];
 
   const uniqueModels = Array.from(new Set(modelsToTry));
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -713,11 +760,16 @@ Responda em formato JSON informando se a questão é válida e a justificativa t
     });
 
   } catch (error: any) {
-    console.error("Gemini consolidated question generation error:", error);
-    return res.json({
-      success: true,
+    const parsed = parseGeminiError(error);
+    console.error("Gemini consolidated question generation error:", parsed);
+    return res.status(parsed.status).json({
+      success: false,
+      error: parsed.message,
+      errorType: parsed.errorType,
+      details: parsed.details,
+      status: parsed.status,
+      stack: error.stack || "",
       isFallback: true,
-      warning: "Erro ao consultar o Gemini (pipeline consolidado). Usando contingência local.",
       data: getFallbackQuestion(resolvedTopic, resolvedDiscipline, currentBanca)
     });
   }
@@ -929,11 +981,15 @@ Diretrizes adicionais:
     });
 
   } catch (error: any) {
-    console.error("Gemini chat error:", error);
-    return res.json({
-      success: true,
-      isFallback: true,
-      text: "Professor(a), tive uma oscilação na conexão com a IA, mas continuo aqui para te apoiar. Que tal revisarmos os pontos fundamentais da LDB enquanto a rede se estabiliza?"
+    const parsed = parseGeminiError(error);
+    console.error("Gemini chat error:", parsed);
+    return res.status(parsed.status).json({
+      success: false,
+      error: parsed.message,
+      errorType: parsed.errorType,
+      details: parsed.details,
+      status: parsed.status,
+      stack: error.stack || ""
     });
   }
 });
@@ -1018,12 +1074,17 @@ Esse documento deve conter instruções como:
       text: response.text || "Não foi possível gerar a análise técnica no momento."
     });
 
-  } catch (err) {
-    console.error("Analysis error (falling back to offline DNA):", err);
-    return res.json({
-      success: true,
+  } catch (err: any) {
+    const parsed = parseGeminiError(err);
+    console.error("Analysis error (falling back to offline DNA):", parsed);
+    return res.status(parsed.status).json({
+      success: false,
+      error: parsed.message,
+      errorType: parsed.errorType,
+      details: parsed.details,
+      status: parsed.status,
+      stack: err.stack || "",
       isFallback: true,
-      warning: "Erro ao consultar o Gemini (503/Instabilidade). Utilizando contingência local.",
       text: getFallbackAnalysis(banca, query)
     });
   }
@@ -1031,6 +1092,11 @@ Esse documento deve conter instruções como:
 
 // Serve static app in production / Vite in development
 async function startServer() {
+  if (process.env.VERCEL) {
+    console.log("Running in Vercel environment - skipping app.listen and dev server initialization");
+    return;
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1051,3 +1117,5 @@ async function startServer() {
 }
 
 startServer();
+
+export default app;
