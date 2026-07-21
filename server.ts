@@ -6,10 +6,108 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+import { db } from "./src/db/index.ts";
+import { users, userStates } from "./src/db/schema.ts";
+import { requireAuth, AuthenticatedRequest } from "./src/middleware/auth.ts";
+import { eq, and } from "drizzle-orm";
+
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Auth & Syncing API Endpoints
+app.post("/api/auth/register", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { uid, email } = req.user;
+    
+    // Upsert user
+    const [dbUser] = await db.insert(users)
+      .values({ uid, email })
+      .onConflictDoUpdate({
+        target: users.uid,
+        set: { email }
+      })
+      .returning();
+
+    return res.json({ success: true, user: dbUser });
+  } catch (error) {
+    console.error("Register user error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Sync multiple states from client (bulk save)
+app.post("/api/user/sync", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { uid } = req.user;
+    const { states } = req.body; // Array of { key, value }
+
+    if (!states || !Array.isArray(states)) {
+      return res.status(400).json({ error: "Invalid states format" });
+    }
+
+    const [dbUser] = await db.select().from(users).where(eq(users.uid, uid)).limit(1);
+    if (!dbUser) {
+      return res.status(404).json({ error: "User not registered" });
+    }
+
+    // Insert or update all states in parallel upserts
+    const promises = states.map(async (state: { key: string; value: string }) => {
+      return db.insert(userStates)
+        .values({
+          userId: dbUser.id,
+          key: state.key,
+          value: state.value,
+          updatedAt: new Date()
+        })
+        .onConflictDoUpdate({
+          target: [userStates.userId, userStates.key],
+          set: { value: state.value, updatedAt: new Date() }
+        });
+    });
+
+    await Promise.all(promises);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Sync user states error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get all states for a user
+app.get("/api/user/states", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { uid } = req.user;
+
+    const [dbUser] = await db.select().from(users).where(eq(users.uid, uid)).limit(1);
+    if (!dbUser) {
+      return res.status(404).json({ error: "User not registered" });
+    }
+
+    const dbStates = await db.select().from(userStates).where(eq(userStates.userId, dbUser.id));
+    
+    // Transform array to key-value object
+    const statesMap: Record<string, string> = {};
+    dbStates.forEach(s => {
+      statesMap[s.key] = s.value;
+    });
+
+    return res.json({ success: true, states: statesMap });
+  } catch (error) {
+    console.error("Get user states error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Lazy-initialize Gemini SDK
 let aiClient: GoogleGenAI | null = null;
@@ -634,6 +732,9 @@ app.post("/api/chat", async (req, res) => {
     topic, 
     difficultyTopics,
     completedDays,
+    completedDates,
+    genSubtopicStatus,
+    specSubtopicStatus,
     scheduleItems,
     completedTopics,
     pendingTopics,
@@ -769,6 +870,21 @@ app.post("/api/chat", async (req, res) => {
         const isDayCompleted = completedDays && completedDays[dayName];
         progressContext += `- ${dayName}: ${item.desc || ""} [Status: ${isDayCompleted ? "CONCLUÍDO (Concluído pelo usuário)" : "PENDENTE (Não concluído)"}]\n`;
       });
+    }
+
+    // Include detailed subtopics status from the Study Guide Map (Guia do Edital / Mapa de Conteúdos)
+    if (genSubtopicStatus && typeof genSubtopicStatus === "object") {
+      const completedGens = Object.keys(genSubtopicStatus).filter(k => genSubtopicStatus[k]);
+      if (completedGens.length > 0) {
+        progressContext += `\nSUBTÓPICOS GERAIS CONCLUÍDOS NO GUIA DO EDITAL (MAPA DE CONTEÚDOS):\n` + completedGens.map(id => `- Concluído: ${id.replace(/_/g, " -> ")}`).join("\n") + "\n";
+      }
+    }
+
+    if (specSubtopicStatus && typeof specSubtopicStatus === "object") {
+      const completedSpecs = Object.keys(specSubtopicStatus).filter(k => specSubtopicStatus[k]);
+      if (completedSpecs.length > 0) {
+        progressContext += `\nSUBTÓPICOS ESPECÍFICOS CONCLUÍDOS NO GUIA DO EDITAL (MAPA DE CONTEÚDOS):\n` + completedSpecs.map(id => `- Concluído: ${id.replace(/_/g, " -> ")}`).join("\n") + "\n";
+      }
     }
 
     if (completedTopics && Array.isArray(completedTopics) && completedTopics.length > 0) {

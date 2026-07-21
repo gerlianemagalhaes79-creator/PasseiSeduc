@@ -33,8 +33,15 @@ import {
   Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
+import { auth, googleAuthProvider } from "./lib/firebase.ts";
 
 export default function App() {
+  // Authentication & Cloud SQL Syncing States
+  const [user, setUser] = useState<User | null>(null);
+  const [syncLoading, setSyncLoading] = useState<boolean>(true);
+  const [syncingStatus, setSyncingStatus] = useState<"idle" | "syncing" | "success" | "error">("idle");
+
   // Application Onboarding State
   const [onboarded, setOnboarded] = useState<boolean>(() => {
     return localStorage.getItem("ia_aprova_onboarded") === "true";
@@ -86,6 +93,7 @@ export default function App() {
     }
     return INITIAL_TOPICS;
   });
+
   const [currentTopic, setCurrentTopic] = useState<string>("Legislação Educacional Geral e Didática");
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -243,6 +251,68 @@ export default function App() {
     "Edital oficial SEDUC-CE de 2026. Prioriza LDB atualizada, Plano Nacional de Educação, Estatuto do Magistério do Ceará, Didática Geral, metodologias ativas e avaliação formativa."
   );
 
+  // Lifted States for Single Source of Truth
+  const [completedDays, setCompletedDays] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("ia_aprova_completed_days");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return {
+      "Segunda": false,
+      "Terça": false,
+      "Quarta": false,
+      "Quinta": false,
+      "Sexta": false,
+      "Sábado": false,
+      "Domingo": false
+    };
+  });
+
+  const [completedDates, setCompletedDates] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("ia_aprova_completed_dates_v1");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return {};
+  });
+
+  const [genSubtopicStatus, setGenSubtopicStatus] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("aprova_prof_general_subtopics_status");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [specSubtopicStatus, setSpecSubtopicStatus] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("aprova_prof_specific_subtopics_status");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [ptStatus, setPtStatus] = useState<Record<string, { theory: boolean; practice: boolean; summary: boolean; review: boolean }>>(() => {
+    try {
+      const saved = localStorage.getItem("aprova_prof_pt_status");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   // Persist profile and onboarding states
   useEffect(() => {
     localStorage.setItem("ia_aprova_profile", JSON.stringify(profile));
@@ -251,6 +321,26 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("ia_aprova_onboarded", String(onboarded));
   }, [onboarded]);
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_completed_days", JSON.stringify(completedDays));
+  }, [completedDays]);
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_completed_dates_v1", JSON.stringify(completedDates));
+  }, [completedDates]);
+
+  useEffect(() => {
+    localStorage.setItem("aprova_prof_general_subtopics_status", JSON.stringify(genSubtopicStatus));
+  }, [genSubtopicStatus]);
+
+  useEffect(() => {
+    localStorage.setItem("aprova_prof_specific_subtopics_status", JSON.stringify(specSubtopicStatus));
+  }, [specSubtopicStatus]);
+
+  useEffect(() => {
+    localStorage.setItem("aprova_prof_pt_status", JSON.stringify(ptStatus));
+  }, [ptStatus]);
 
   // Sync profile when variables change
   useEffect(() => {
@@ -314,6 +404,203 @@ export default function App() {
 
     setTopics(freshList);
   }, [discipline, banca, examDate, studyStartDate, squareLogo, rectangularLogo, profile?.hasEdital, profile?.editalTopics]);
+
+  const loadCloudStates = async (firebaseUser: User) => {
+    try {
+      setSyncingStatus("syncing");
+      const idToken = await firebaseUser.getIdToken();
+      const response = await fetch("/api/user/states", {
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+        },
+      });
+      if (response.ok) {
+        const { states } = await response.json();
+        if (states && Object.keys(states).length > 0) {
+          // Load cloud states into localStorage
+          Object.entries(states).forEach(([key, val]) => {
+            localStorage.setItem(key, val as string);
+          });
+
+          // Trigger local React states to update from localStorage
+          const savedOnboarded = localStorage.getItem("ia_aprova_onboarded") === "true";
+          const savedFlashcards = localStorage.getItem("ia_aprova_flashcards_v1");
+          const savedTopics = localStorage.getItem("ia_aprova_topics_v4");
+          const savedProfile = localStorage.getItem("ia_aprova_profile");
+          const savedCompletedDays = localStorage.getItem("ia_aprova_completed_days");
+          const savedCompletedDates = localStorage.getItem("ia_aprova_completed_dates_v1");
+          const savedGenSubtopicStatus = localStorage.getItem("aprova_prof_general_subtopics_status");
+          const savedSpecSubtopicStatus = localStorage.getItem("aprova_prof_specific_subtopics_status");
+          const savedPtStatus = localStorage.getItem("aprova_prof_pt_status");
+
+          if (savedOnboarded) setOnboarded(savedOnboarded);
+          if (savedFlashcards) {
+            try { setFlashcards(JSON.parse(savedFlashcards)); } catch {}
+          }
+          if (savedTopics) {
+            try { setTopics(JSON.parse(savedTopics)); } catch {}
+          }
+          if (savedCompletedDays) {
+            try { setCompletedDays(JSON.parse(savedCompletedDays)); } catch {}
+          }
+          if (savedCompletedDates) {
+            try { setCompletedDates(JSON.parse(savedCompletedDates)); } catch {}
+          }
+          if (savedGenSubtopicStatus) {
+            try { setGenSubtopicStatus(JSON.parse(savedGenSubtopicStatus)); } catch {}
+          }
+          if (savedSpecSubtopicStatus) {
+            try { setSpecSubtopicStatus(JSON.parse(savedSpecSubtopicStatus)); } catch {}
+          }
+          if (savedPtStatus) {
+            try { setPtStatus(JSON.parse(savedPtStatus)); } catch {}
+          }
+          if (savedProfile) {
+            try {
+              const parsed = JSON.parse(savedProfile);
+              setProfile(parsed);
+              if (parsed.discipline) setDiscipline(parsed.discipline);
+              if (parsed.banca) setBanca(parsed.banca);
+              if (parsed.examDate) setExamDate(parsed.examDate);
+              if (parsed.studyStartDate) setStudyStartDate(parsed.studyStartDate);
+              if (parsed.squareLogo) setSquareLogo(parsed.squareLogo);
+              if (parsed.rectangularLogo) setRectangularLogo(parsed.rectangularLogo);
+            } catch {}
+          }
+          
+          // Let subtopics reload
+          window.dispatchEvent(new Event("storage"));
+          setSyncingStatus("success");
+          setTimeout(() => setSyncingStatus("idle"), 2500);
+        } else {
+          // Push existing local storage states to database (initial sync)
+          await pushLocalToCloud(firebaseUser);
+        }
+      } else {
+        setSyncingStatus("error");
+      }
+    } catch (err) {
+      console.error("Load cloud states error:", err);
+      setSyncingStatus("error");
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const pushLocalToCloud = async (firebaseUser: User) => {
+    try {
+      setSyncingStatus("syncing");
+      const idToken = await firebaseUser.getIdToken();
+      const statesToPush: { key: string; value: string }[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("ia_aprova_") || key.startsWith("aprova_prof_") || key.startsWith("aprova_"))) {
+          const value = localStorage.getItem(key);
+          if (value) {
+            statesToPush.push({ key, value });
+          }
+        }
+      }
+
+      if (statesToPush.length > 0) {
+        const response = await fetch("/api/user/sync", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ states: statesToPush }),
+        });
+        if (response.ok) {
+          setSyncingStatus("success");
+          setTimeout(() => setSyncingStatus("idle"), 2500);
+        } else {
+          setSyncingStatus("error");
+        }
+      } else {
+        setSyncingStatus("success");
+        setTimeout(() => setSyncingStatus("idle"), 2500);
+      }
+    } catch (err) {
+      console.error("Push local states error:", err);
+      setSyncingStatus("error");
+    }
+  };
+
+  // Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const response = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${idToken}`,
+            },
+          });
+          if (response.ok) {
+            await loadCloudStates(firebaseUser);
+          } else {
+            console.error("Failed to register user on backend.");
+          }
+        } catch (err) {
+          console.error("Auth sync register error:", err);
+        }
+      } else {
+        setSyncLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Auto-sync trigger
+  useEffect(() => {
+    if (!user) return;
+
+    const syncTimer = setTimeout(async () => {
+      try {
+        setSyncingStatus("syncing");
+        const idToken = await user.getIdToken();
+        const statesToPush: { key: string; value: string }[] = [];
+        
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith("ia_aprova_") || key.startsWith("aprova_prof_") || key.startsWith("aprova_"))) {
+            const value = localStorage.getItem(key);
+            if (value) {
+              statesToPush.push({ key, value });
+            }
+          }
+        }
+
+        if (statesToPush.length > 0) {
+          const response = await fetch("/api/user/sync", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({ states: statesToPush }),
+          });
+          if (response.ok) {
+            setSyncingStatus("success");
+            setTimeout(() => setSyncingStatus("idle"), 2000);
+          } else {
+            setSyncingStatus("error");
+          }
+        }
+      } catch (err) {
+        console.error("Auto sync update error:", err);
+        setSyncingStatus("error");
+      }
+    }, 1500); // 1.5s debounce
+
+    return () => clearTimeout(syncTimer);
+  }, [user, profile, topics, flashcards, onboarded, activeModule, completedDays, completedDates, genSubtopicStatus, specSubtopicStatus, ptStatus]);
 
   const handleSquareLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -525,6 +812,17 @@ export default function App() {
                   <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
                   <span>{profile.streak} dias</span>
                 </div>
+                {user ? (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 rounded-xl px-3.5 py-1.5 shadow-xxs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                    <span>Nuvem Ativa</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
+                    <span>Nuvem Inativa</span>
+                  </div>
+                )}
               </div>
 
               {/* Redesigned Sleek Primary Dropdown View Switcher */}
@@ -659,6 +957,63 @@ export default function App() {
               <Settings className="w-4.5 h-4.5 text-emerald-600" />
               Ajustar Edital
             </button>
+
+            {/* Cloud SQL Syncing Control Widget */}
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`w-2 h-2 rounded-full ${user ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-extrabold">Backup em Nuvem</span>
+                </div>
+
+                {user ? (
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 truncate mb-1" title={user.email || ""}>
+                      {user.email}
+                    </p>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                        {syncingStatus === "syncing" && "⏳ Salvando..."}
+                        {syncingStatus === "success" && "✅ Salvo"}
+                        {syncingStatus === "error" && "❌ Erro"}
+                        {syncingStatus === "idle" && "☁️ Conectado"}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          await signOut(auth);
+                          localStorage.clear();
+                          window.location.reload();
+                        }}
+                        className="text-[10px] font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+                      >
+                        Sair / Desconectar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mb-3 font-semibold">
+                      Salve seu progresso de estudos, edital e simulados na nuvem de forma segura.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        try {
+                          setSyncingStatus("syncing");
+                          await signInWithPopup(auth, googleAuthProvider);
+                        } catch (err) {
+                          console.error("Google popup sign-in error:", err);
+                          setSyncingStatus("error");
+                        }
+                      }}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold py-2.5 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Conectar com Google
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </nav>
 
            {/* Main Content Column */}
@@ -688,6 +1043,10 @@ export default function App() {
                       }}
                       flashcards={flashcards}
                       onOpenFlashcards={() => setActiveModule("flashcards")}
+                      completedDays={completedDays}
+                      setCompletedDays={setCompletedDays}
+                      completedDates={completedDates}
+                      setCompletedDates={setCompletedDates}
                     />
                   </motion.div>
                 )}
@@ -722,6 +1081,12 @@ export default function App() {
                       profile={profile} 
                       onChangeModule={setActiveModule}
                       onTopicClick={setCurrentTopic}
+                      genSubtopicStatus={genSubtopicStatus}
+                      setGenSubtopicStatus={setGenSubtopicStatus}
+                      specSubtopicStatus={specSubtopicStatus}
+                      setSpecSubtopicStatus={setSpecSubtopicStatus}
+                      ptStatus={ptStatus}
+                      setPtStatus={setPtStatus}
                     />
                   </motion.div>
                 )}
@@ -757,6 +1122,10 @@ export default function App() {
                       profile={profile}
                       currentTopic={currentTopic}
                       topics={topics}
+                      completedDays={completedDays}
+                      completedDates={completedDates}
+                      genSubtopicStatus={genSubtopicStatus}
+                      specSubtopicStatus={specSubtopicStatus}
                     />
                   </motion.div>
                 )}

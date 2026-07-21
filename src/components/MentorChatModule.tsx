@@ -25,9 +25,21 @@ interface MentorChatProps {
   profile: UserProfile;
   currentTopic: string;
   topics?: StudyTopic[];
+  completedDays?: Record<string, boolean>;
+  completedDates?: Record<string, boolean>;
+  genSubtopicStatus?: Record<string, boolean>;
+  specSubtopicStatus?: Record<string, boolean>;
 }
 
-export default function MentorChatModule({ profile, currentTopic, topics = [] }: MentorChatProps) {
+export default function MentorChatModule({ 
+  profile, 
+  currentTopic, 
+  topics = [],
+  completedDays,
+  completedDates,
+  genSubtopicStatus,
+  specSubtopicStatus
+}: MentorChatProps) {
   // Pre-calculate the entire interleaved schedule for the active study period (mirrors DashboardModule.tsx)
   const examSchedule = useMemo(() => {
     if (!profile.examDate) return {};
@@ -416,14 +428,28 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
       fetchUrl = "/api/chat";
     }
 
-    // Retrieve calendar and schedule items from localStorage to send as context
-    const savedCompletedDays = localStorage.getItem("ia_aprova_completed_days");
-    let completedDaysObj = {};
-    if (savedCompletedDays) {
-      try {
-        completedDaysObj = JSON.parse(savedCompletedDays);
-      } catch (e) {}
+    // Retrieve calendar and schedule items (using passed props if available to avoid stale states)
+    let completedDaysObj = completedDays;
+    if (!completedDaysObj) {
+      const savedCompletedDays = localStorage.getItem("ia_aprova_completed_days");
+      if (savedCompletedDays) {
+        try {
+          completedDaysObj = JSON.parse(savedCompletedDays);
+        } catch (e) {}
+      }
     }
+    if (!completedDaysObj) completedDaysObj = {};
+
+    let completedDatesObj = completedDates;
+    if (!completedDatesObj) {
+      const savedCompletedDates = localStorage.getItem("ia_aprova_completed_dates_v1");
+      if (savedCompletedDates) {
+        try {
+          completedDatesObj = JSON.parse(savedCompletedDates);
+        } catch (e) {}
+      }
+    }
+    if (!completedDatesObj) completedDatesObj = {};
 
     const savedSchedule = localStorage.getItem("ia_aprova_custom_schedule_v5");
     let scheduleList = [];
@@ -459,7 +485,11 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
 
     const weekdayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
     const todayWeekdayName = weekdayNames[todayDateObjForSchedule.getDay()];
-    const isTodayCompleted = todayCalendarTopic ? !!(completedDaysObj as any)[todayWeekdayName] : false;
+    
+    // Correct checking using either calendar dates or weekly schedule days
+    const isTodayCompleted = profile.examDate 
+      ? !!(completedDatesObj as any)[todayScheduleKey]
+      : (todayCalendarTopic ? !!(completedDaysObj as any)[todayWeekdayName] : false);
 
     try {
       const response = await fetch(fetchUrl, {
@@ -472,6 +502,9 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
            topic: currentTopic,
            difficultyTopics: difficultyList,
            completedDays: completedDaysObj,
+           completedDates: completedDatesObj,
+           genSubtopicStatus: genSubtopicStatus || {},
+           specSubtopicStatus: specSubtopicStatus || {},
            scheduleItems: scheduleList,
            completedTopics: completedTopicsList,
            pendingTopics: pendingTopicsList,

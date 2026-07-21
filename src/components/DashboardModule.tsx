@@ -16,6 +16,10 @@ interface DashboardProps {
   setActiveTab?: (tab: "mapping" | "schedule") => void;
   flashcards?: any[];
   onOpenFlashcards?: () => void;
+  completedDays?: Record<string, boolean>;
+  setCompletedDays?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  completedDates?: Record<string, boolean>;
+  setCompletedDates?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
 interface ScheduleItem {
@@ -88,7 +92,11 @@ export default function DashboardModule({
   activeTab: controlledActiveTab,
   setActiveTab: controlledSetActiveTab,
   flashcards = [],
-  onOpenFlashcards
+  onOpenFlashcards,
+  completedDays: externalCompletedDays,
+  setCompletedDays: externalSetCompletedDays,
+  completedDates: externalCompletedDates,
+  setCompletedDates: externalSetCompletedDates
 }: DashboardProps) {
   // Compute metrics
   const totalTopics = topics.length;
@@ -111,7 +119,7 @@ export default function DashboardModule({
     : 0;
 
   // Persistent local state for the suggested weekly schedule completion
-  const [completedDays, setCompletedDays] = useState<Record<string, boolean>>(() => {
+  const [internalCompletedDays, internalSetCompletedDays] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem("ia_aprova_completed_days");
     if (saved) {
       try {
@@ -132,12 +140,17 @@ export default function DashboardModule({
     };
   });
 
+  const completedDays = externalCompletedDays || internalCompletedDays;
+  const setCompletedDays = externalSetCompletedDays || internalSetCompletedDays;
+
   useEffect(() => {
-    localStorage.setItem("ia_aprova_completed_days", JSON.stringify(completedDays));
-  }, [completedDays]);
+    if (!externalCompletedDays) {
+      localStorage.setItem("ia_aprova_completed_days", JSON.stringify(internalCompletedDays));
+    }
+  }, [internalCompletedDays, externalCompletedDays]);
 
   // Persistent local state for specific calendar date completion (to prevent checking off all Mondays across the year)
-  const [completedDates, setCompletedDates] = useState<Record<string, boolean>>(() => {
+  const [internalCompletedDates, internalSetCompletedDates] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem("ia_aprova_completed_dates_v1");
     if (saved) {
       try {
@@ -150,9 +163,14 @@ export default function DashboardModule({
     return {};
   });
 
+  const completedDates = externalCompletedDates || internalCompletedDates;
+  const setCompletedDates = externalSetCompletedDates || internalSetCompletedDates;
+
   useEffect(() => {
-    localStorage.setItem("ia_aprova_completed_dates_v1", JSON.stringify(completedDates));
-  }, [completedDates]);
+    if (!externalCompletedDates) {
+      localStorage.setItem("ia_aprova_completed_dates_v1", JSON.stringify(internalCompletedDates));
+    }
+  }, [internalCompletedDates, externalCompletedDates]);
 
   // Persistent state for individual item check-ins on specific calendar dates
   const [completedDateItems, setCompletedDateItems] = useState<Record<string, Record<string, boolean>>>(() => {

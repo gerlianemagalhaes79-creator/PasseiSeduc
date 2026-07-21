@@ -7,6 +7,7 @@ import {
   HelpCircle, 
   GraduationCap, 
   ChevronDown, 
+  ChevronUp,
   ChevronRight, 
   Award, 
   Shield, 
@@ -107,15 +108,31 @@ interface SyllabusModuleProps {
   profile: UserProfile;
   onChangeModule?: (module: string) => void;
   onTopicClick?: (topic: string) => void;
+  genSubtopicStatus?: Record<string, boolean>;
+  setGenSubtopicStatus?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  specSubtopicStatus?: Record<string, boolean>;
+  setSpecSubtopicStatus?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  ptStatus?: Record<string, { theory: boolean; practice: boolean; summary: boolean; review: boolean }>;
+  setPtStatus?: React.Dispatch<React.SetStateAction<Record<string, { theory: boolean; practice: boolean; summary: boolean; review: boolean }>>>;
 }
 
-export default function SyllabusModule({ profile, onChangeModule, onTopicClick }: SyllabusModuleProps) {
+export default function SyllabusModule({ 
+  profile, 
+  onChangeModule, 
+  onTopicClick,
+  genSubtopicStatus: externalGenSubtopicStatus,
+  setGenSubtopicStatus: externalSetGenSubtopicStatus,
+  specSubtopicStatus: externalSpecSubtopicStatus,
+  setSpecSubtopicStatus: externalSetSpecSubtopicStatus,
+  ptStatus: externalPtStatus,
+  setPtStatus: externalSetPtStatus
+}: SyllabusModuleProps) {
   // Tabs: 'syllabus' (Guia do Conteúdo), 'simulator' (Sorteador de Pontos), 'calculator' (Calculadora de Notas), 'salaries' (Remuneração & Vagas)
   const [activeTab, setActiveTab] = useState<string>("syllabus");
   const [selectedSectorId, setSelectedSectorId] = useState<string>("matematica");
   const [syllabusView, setSyllabusView] = useState<"geral" | "especifico">("geral");
   const [selectedGenCatId, setSelectedGenCatId] = useState<string>("pedagogicos");
-  const [selectedGenTopicKey, setSelectedGenTopicKey] = useState<string>("História do pensamento pedagógico brasileiro, teoria da educação e correntes pedagógicas");
+  const [selectedGenTopicKey, setSelectedGenTopicKey] = useState<string | null>(null);
 
   const visibleSectors = React.useMemo(() => {
     if (!profile.discipline) return sectors;
@@ -169,7 +186,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
   }, [profile.discipline]);
 
   // Local storage state for general subtopics status
-  const [genSubtopicStatus, setGenSubtopicStatus] = useState<Record<string, boolean>>(() => {
+  const [internalGenSubtopicStatus, internalSetGenSubtopicStatus] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem("aprova_prof_general_subtopics_status");
       return saved ? JSON.parse(saved) : {};
@@ -178,9 +195,14 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
     }
   });
 
+  const genSubtopicStatus = externalGenSubtopicStatus || internalGenSubtopicStatus;
+  const setGenSubtopicStatus = externalSetGenSubtopicStatus || internalSetGenSubtopicStatus;
+
   React.useEffect(() => {
-    localStorage.setItem("aprova_prof_general_subtopics_status", JSON.stringify(genSubtopicStatus));
-  }, [genSubtopicStatus]);
+    if (!externalGenSubtopicStatus) {
+      localStorage.setItem("aprova_prof_general_subtopics_status", JSON.stringify(internalGenSubtopicStatus));
+    }
+  }, [internalGenSubtopicStatus, externalGenSubtopicStatus]);
 
   const toggleGenSubtopic = (topicKey: string, subtopic: string) => {
     const compositeId = `${topicKey}_${subtopic}`;
@@ -191,7 +213,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
   };
 
   // Local storage state for specific subtopics status
-  const [specSubtopicStatus, setSpecSubtopicStatus] = useState<Record<string, boolean>>(() => {
+  const [internalSpecSubtopicStatus, internalSetSpecSubtopicStatus] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem("aprova_prof_specific_subtopics_status");
       return saved ? JSON.parse(saved) : {};
@@ -200,9 +222,14 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
     }
   });
 
+  const specSubtopicStatus = externalSpecSubtopicStatus || internalSpecSubtopicStatus;
+  const setSpecSubtopicStatus = externalSetSpecSubtopicStatus || internalSetSpecSubtopicStatus;
+
   React.useEffect(() => {
-    localStorage.setItem("aprova_prof_specific_subtopics_status", JSON.stringify(specSubtopicStatus));
-  }, [specSubtopicStatus]);
+    if (!externalSpecSubtopicStatus) {
+      localStorage.setItem("aprova_prof_specific_subtopics_status", JSON.stringify(internalSpecSubtopicStatus));
+    }
+  }, [internalSpecSubtopicStatus, externalSpecSubtopicStatus]);
 
   const toggleSpecSubtopic = (sectorId: string, pointNum: number, subtopic: string) => {
     const compositeId = `${sectorId}_${pointNum}_${subtopic}`;
@@ -212,12 +239,13 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
     }));
   };
 
-  const [selectedSpecPointNum, setSelectedSpecPointNum] = useState<number>(1);
+  const [selectedSpecPointNum, setSelectedSpecPointNum] = useState<number | null>(null);
 
   // Advanced Interactive Mapping States
   const [expandedPt, setExpandedPt] = useState<number | null>(null);
   const [filterRelevance, setFilterRelevance] = useState<"all" | "high" | "not_started">("all");
-  const [ptStatus, setPtStatus] = useState<Record<string, { theory: boolean; practice: boolean; summary: boolean; review: boolean }>>(() => {
+  
+  const [internalPtStatus, internalSetPtStatus] = useState<Record<string, { theory: boolean; practice: boolean; summary: boolean; review: boolean }>>(() => {
     try {
       const saved = localStorage.getItem("aprova_prof_pt_status");
       return saved ? JSON.parse(saved) : {};
@@ -226,9 +254,14 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
     }
   });
 
+  const ptStatus = externalPtStatus || internalPtStatus;
+  const setPtStatus = externalSetPtStatus || internalSetPtStatus;
+
   React.useEffect(() => {
-    localStorage.setItem("aprova_prof_pt_status", JSON.stringify(ptStatus));
-  }, [ptStatus]);
+    if (!externalPtStatus) {
+      localStorage.setItem("aprova_prof_pt_status", JSON.stringify(internalPtStatus));
+    }
+  }, [internalPtStatus, externalPtStatus]);
 
   const togglePtStatus = (sectorId: string, pointNum: number, key: 'theory' | 'practice' | 'summary' | 'review') => {
     const compositeId = `${sectorId}_${pointNum}`;
@@ -746,7 +779,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                           value={selectedSectorId}
                           onChange={(e) => {
                             setSelectedSectorId(e.target.value);
-                            setSelectedSpecPointNum(1);
+                            setSelectedSpecPointNum(null);
                           }}
                           className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-2 text-xxs font-bold text-slate-700 focus:outline-none cursor-pointer"
                         >
@@ -799,83 +832,41 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                       </div>
                     </div>
 
-                    {/* Points Menu Accordion List */}
-                    <div className="bg-white rounded-xl border border-slate-100 p-3 space-y-3">
-                      <div className="flex items-center justify-between px-1">
-                        <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-                          Pontos do Edital
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-bold bg-slate-50 py-0.5 px-1.5 rounded-md">
-                          {currentSector.points.length} pontos
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
-                        {(() => {
-                          const filteredPoints = currentSector.points.filter(pt => {
-                            const subtopics = getPointSubtopics(pt.desc, pt.title);
-                            const completedCount = subtopics.filter(sub => specSubtopicStatus[`${currentSector.id}_${pt.num}_${sub}`]).length;
-                            const isStarted = completedCount > 0;
-                            if (filterRelevance === "not_started") return !isStarted;
-                            if (filterRelevance === "high") {
-                              const analysis = getPointAnalysis(currentSector.id, pt.num, pt.title);
-                              return analysis.relevance >= 70;
-                            }
-                            return true;
-                          });
-
-                          if (filteredPoints.length === 0) {
-                            return (
-                              <div className="p-4 text-center text-slate-400 text-xxs font-bold">
-                                Nenhum ponto corresponde ao filtro ativo.
-                              </div>
-                            );
-                          }
-
-                          return filteredPoints.map((pt) => {
-                            const subtopics = getPointSubtopics(pt.desc, pt.title);
-                            const completedCount = subtopics.filter(sub => specSubtopicStatus[`${currentSector.id}_${pt.num}_${sub}`]).length;
-                            const pct = subtopics.length > 0 ? Math.round((completedCount / subtopics.length) * 100) : 0;
-                            const isSelected = selectedSpecPointNum === pt.num;
-                            const analysis = getPointAnalysis(currentSector.id, pt.num, pt.title);
-                            
-                            return (
-                              <button
-                                key={pt.num}
-                                onClick={() => setSelectedSpecPointNum(pt.num)}
-                                className={`w-full text-left p-2.5 rounded-lg border transition-all flex flex-col gap-1 cursor-pointer ${
-                                  isSelected
-                                    ? "bg-emerald-50 border-emerald-250 text-emerald-950 font-bold shadow-xs"
-                                    : "bg-white border-slate-100 hover:border-slate-200 text-slate-600 hover:bg-slate-50"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="text-[10px] font-black tracking-wide uppercase text-slate-500">
-                                    Ponto {pt.num}
-                                  </span>
-                                  <div className="flex items-center gap-1.5">
-                                    {analysis.relevance >= 70 && (
-                                      <span className="bg-amber-100 text-amber-800 text-[8px] font-bold px-1.5 py-0.2 rounded">Alta Prioridade</span>
-                                    )}
-                                    {pct === 100 && (
-                                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    )}
-                                  </div>
-                                </div>
-                                <span className="text-[11px] font-bold leading-normal text-slate-800 line-clamp-1">
-                                  {pt.title}
-                                </span>
-                                <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-1 flex">
-                                  <div 
-                                    className={`h-full transition-all duration-300 ${isSelected ? 'bg-emerald-600' : 'bg-slate-300'}`} 
-                                    style={{ width: `${pct}%` }} 
-                                  />
-                                </div>
-                              </button>
-                            );
-                          });
-                        })()}
-                      </div>
+                    {/* Sector Overall Progress Card */}
+                    <div className="bg-white rounded-xl border border-slate-100 p-4 space-y-3">
+                      <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">
+                        Progresso do Cargo/Setor
+                      </h3>
+                      {(() => {
+                        const stats = getSectorStats(currentSector);
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex items-end justify-between">
+                              <span className="text-2xl font-black text-slate-800 leading-none">
+                                {stats.progressPct}%
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-bold">
+                                {stats.completedGoals} de {stats.totalGoals} metas
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-emerald-600 transition-all duration-500 rounded-full" 
+                                style={{ width: `${stats.progressPct}%` }}
+                              />
+                            </div>
+                            <p className="text-[10px] leading-relaxed text-slate-500">
+                              {stats.progressPct === 100 
+                                ? "🎉 Parabéns! Você concluiu todos os tópicos deste setor do edital específico!" 
+                                : stats.progressPct > 50 
+                                ? "🚀 Excelente progresso! Continue firme em direção à aprovação!" 
+                                : stats.progressPct > 0 
+                                ? "💪 Ótimo começo! Continue avançando nos pontos do edital!" 
+                                : "💡 Vamos começar? Selecione um dos pontos à direita para abrir o seu plano de estudos!"}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Rule Warning */}
@@ -912,163 +903,244 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                     </div>
                   </div>
 
-                  {/* Right Content Column: Selected Point Detailed Study Guide */}
-                  <div className="lg:col-span-8 space-y-6">
-                    {(() => {
-                      const activePt = currentSector.points.find(p => p.num === selectedSpecPointNum) || currentSector.points[0];
-                      if (!activePt) {
-                        return (
-                          <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500 font-bold text-xs">
-                            Nenhum ponto selecionado. Escolha um ponto na barra lateral.
-                          </div>
-                        );
-                      }
+                  {/* Right Content Column: Accordion-based study guide of Points */}
+                  <div className="lg:col-span-8 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="space-y-0.5">
+                        <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                          Pontos do Edital Específico ({currentSector.name})
+                        </h2>
+                        <p className="text-slate-400 text-[10px]">
+                          Clique em um ponto para abrir os tópicos, bibliografias e mentorias inteligentes.
+                        </p>
+                      </div>
+                    </div>
 
-                      const analysis = getPointAnalysis(currentSector.id, activePt.num, activePt.title);
-                      const subtopics = getPointSubtopics(activePt.desc, activePt.title);
-                      const completedCount = subtopics.filter(sub => specSubtopicStatus[`${currentSector.id}_${activePt.num}_${sub}`]).length;
-                      const pct = subtopics.length > 0 ? Math.round((completedCount / subtopics.length) * 100) : 0;
+                    <div className="space-y-3">
+                      {(() => {
+                        const filteredPoints = currentSector.points.filter(pt => {
+                          const subtopics = getPointSubtopics(pt.desc, pt.title);
+                          const completedCount = subtopics.filter(sub => specSubtopicStatus[`${currentSector.id}_${pt.num}_${sub}`]).length;
+                          const isStarted = completedCount > 0;
+                          if (filterRelevance === "not_started") return !isStarted;
+                          if (filterRelevance === "high") {
+                            const analysis = getPointAnalysis(currentSector.id, pt.num, pt.title);
+                            return analysis.relevance >= 70;
+                          }
+                          return true;
+                        });
 
-                      return (
-                        <div className="space-y-6">
-                          {/* Point Header Card */}
-                          <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 space-y-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2.5">
-                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black tracking-wider uppercase px-2.5 py-1 rounded-full">
-                                Ponto {activePt.num} • {currentSector.name}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full ${
-                                  analysis.relevance >= 75
-                                    ? "bg-rose-50 text-rose-700 border border-rose-100"
-                                    : "bg-amber-50 text-amber-700 border border-amber-100"
-                                }`}>
-                                  {analysis.relevance}% de Relevância
-                                </span>
-                              </div>
+                        if (filteredPoints.length === 0) {
+                          return (
+                            <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-400 font-bold text-xs">
+                              Nenhum ponto corresponde ao filtro ativo.
                             </div>
+                          );
+                        }
 
-                            <div className="space-y-1.5">
-                              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
-                                {activePt.num}. {activePt.title}
-                              </h3>
-                              <p className="text-slate-500 text-[11px] leading-relaxed">
-                                <span className="font-bold text-slate-700">Resumo do Edital:</span> {activePt.desc}
-                              </p>
-                            </div>
+                        return filteredPoints.map((pt) => {
+                          const isExpanded = selectedSpecPointNum === pt.num;
+                          const subtopics = getPointSubtopics(pt.desc, pt.title);
+                          const completedCount = subtopics.filter(sub => specSubtopicStatus[`${currentSector.id}_${pt.num}_${sub}`]).length;
+                          const pct = subtopics.length > 0 ? Math.round((completedCount / subtopics.length) * 100) : 0;
+                          const analysis = getPointAnalysis(currentSector.id, pt.num, pt.title);
 
-                            {/* Point Progress Bar */}
-                            <div className="pt-2 border-t border-slate-50 space-y-1.5">
-                              <div className="flex items-center justify-between text-xxs font-bold text-slate-500">
-                                <span>Progresso no Ponto</span>
-                                <span className="text-emerald-700">{pct}% Concluído</span>
-                              </div>
-                              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-emerald-600 transition-all duration-500" 
-                                  style={{ width: `${pct}%` }} 
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* STUDY GUIDE CARD - Tópicos e Subtópicos do Edital */}
-                          <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 space-y-4">
-                            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                              <CheckSquare className="w-4 h-4 text-emerald-600" />
-                              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wide">
-                                Tópicos e Subtópicos para Estudo Ativo
-                              </h4>
-                            </div>
-                            <p className="text-slate-500 text-xxs sm:text-[10px] leading-relaxed">
-                              Marque cada subtópico abaixo conforme avançar no estudo. Isso permite um acompanhamento cirúrgico e granular do edital específico do cargo.
-                            </p>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                              {subtopics.map((sub, idx) => {
-                                const isChecked = specSubtopicStatus[`${currentSector.id}_${activePt.num}_${sub}`] || false;
-                                return (
-                                  <div 
-                                    key={idx}
-                                    onClick={() => toggleSpecSubtopic(currentSector.id, activePt.num, sub)}
-                                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
-                                      isChecked 
-                                        ? "bg-emerald-50/50 border-emerald-150 text-emerald-950 shadow-xxs" 
-                                        : "bg-slate-50/50 border-slate-100 hover:border-slate-200 text-slate-700 hover:bg-slate-50"
-                                    }`}
-                                  >
-                                    <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                                      isChecked 
-                                        ? "bg-emerald-600 border-emerald-600 text-white" 
-                                        : "bg-white border-slate-300"
-                                    }`}>
-                                      {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                                    </div>
-                                    <div className="flex flex-col">
-                                      <span className={`text-[11px] font-bold leading-snug ${isChecked ? 'line-through text-slate-400 font-medium' : 'text-slate-800'}`}>
-                                        <span className="text-emerald-700 mr-1 font-extrabold font-mono">{activePt.num}.{idx + 1}</span>{" "}
-                                        {sub}
+                          return (
+                            <div
+                              key={pt.num}
+                              className={`bg-white rounded-2xl border transition-all overflow-hidden ${
+                                isExpanded
+                                  ? "border-emerald-250 shadow-md ring-1 ring-emerald-600/5"
+                                  : "border-slate-100 hover:border-slate-200 hover:shadow-xs"
+                              }`}
+                            >
+                              {/* Header: Click to toggle accordion */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSpecPointNum(isExpanded ? null : pt.num)}
+                                className={`w-full text-left p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
+                                  isExpanded ? "bg-emerald-50/20" : "hover:bg-slate-50/40"
+                                }`}
+                              >
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="bg-emerald-100 text-emerald-850 text-[9px] font-extrabold tracking-wide uppercase px-2 py-0.5 rounded-md">
+                                      Ponto {pt.num}
+                                    </span>
+                                    {analysis.relevance >= 70 && (
+                                      <span className="bg-rose-50 text-rose-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded border border-rose-100">
+                                        Alta Prioridade ({analysis.relevance}%)
                                       </span>
-                                    </div>
+                                    )}
+                                    {pct === 100 && (
+                                      <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" /> Concluído
+                                      </span>
+                                    )}
                                   </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* BIBLIOGRAFIA */}
-                          <div className="bg-white rounded-2xl border border-slate-100 p-5 space-y-3.5">
-                            <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-                              <FileText className="w-4 h-4 text-emerald-600" />
-                              <h4 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider">Bibliografia Sugerida</h4>
-                            </div>
-                            <div className="space-y-2">
-                              <p className="text-[11px] leading-relaxed text-slate-600">
-                                Para este ponto, o edital oficial e os principais autores recomendados para estudo de aprofundamento são:
-                              </p>
-                              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-[10px] leading-relaxed text-slate-700 italic font-medium">
-                                {analysis.bibliography}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* ACTIONS */}
-                          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="space-y-1 text-center sm:text-left">
-                              <h5 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider">
-                                Ferramentas Inteligentes de Estudo
-                              </h5>
-                            </div>
-
-                            <div className="flex flex-wrap items-center justify-center gap-2.5 shrink-0">
-                              <button
-                                onClick={() => {
-                                  onTopicClick(`FUNECE - ${currentSector.name}: Ponto ${activePt.num} - ${activePt.title}`);
-                                  onChangeModule("chat");
-                                }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-600/10 cursor-pointer text-center"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                                <span>Estudar com o Mentor</span>
-                                <ArrowUpRight className="w-3.5 h-3.5" />
+                                  <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 leading-snug">
+                                    {pt.title}
+                                  </h3>
+                                  
+                                  {/* Collapsed small progress bar */}
+                                  {!isExpanded && (
+                                    <div className="flex items-center gap-2 max-w-xs pt-1">
+                                      <div className="w-24 bg-slate-100 h-1 rounded-full overflow-hidden shrink-0">
+                                        <div 
+                                          className="h-full bg-emerald-600 transition-all duration-300" 
+                                          style={{ width: `${pct}%` }} 
+                                        />
+                                      </div>
+                                      <span className="text-[10px] text-slate-400 font-bold shrink-0">{pct}%</span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="shrink-0 text-slate-400 pt-1 sm:pt-0">
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-5 h-5" />
+                                  ) : (
+                                    <ChevronDown className="w-5 h-5" />
+                                  )}
+                                </div>
                               </button>
-                              
-                              <button
-                                onClick={() => {
-                                  onTopicClick(`FUNECE - ${currentSector.name}: Ponto ${activePt.num} - ${activePt.title}`);
-                                  onChangeModule("simulator");
-                                }}
-                                className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer text-center"
-                              >
-                                <Play className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                                <span>Praticar Questões do Ponto</span>
-                                <ArrowUpRight className="w-3.5 h-3.5" />
-                              </button>
+
+                              {/* Accordion Content */}
+                              <AnimatePresence initial={false}>
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                                    className="border-t border-slate-100"
+                                  >
+                                    <div className="p-4 sm:p-5 space-y-5 bg-white">
+                                      {/* Resumo do edital */}
+                                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-1">
+                                        <span className="font-extrabold text-slate-600 text-[9px] uppercase tracking-wider block">Resumo do Edital:</span>
+                                        <p className="text-slate-500 text-xxs sm:text-xs leading-relaxed">{pt.desc}</p>
+                                      </div>
+
+                                      {/* Point Progress Bar */}
+                                      <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-xxs font-bold text-slate-500">
+                                          <span>Progresso no Ponto</span>
+                                          <span className="text-emerald-700 font-extrabold">{pct}% Concluído ({completedCount} de {subtopics.length} subtópicos)</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-emerald-600 transition-all duration-500" 
+                                            style={{ width: `${pct}%` }} 
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* STUDY GUIDE CARD - Tópicos e Subtópicos do Edital */}
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                                          <CheckSquare className="w-4 h-4 text-emerald-600" />
+                                          <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
+                                            Tópicos e Subtópicos para Estudo Ativo
+                                          </h4>
+                                        </div>
+                                        <p className="text-slate-500 text-xxs leading-relaxed">
+                                          Marque cada subtópico abaixo conforme avançar no estudo. Isso permite um acompanhamento cirúrgico e granular do edital específico do cargo.
+                                        </p>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                          {subtopics.map((sub, idx) => {
+                                            const isChecked = specSubtopicStatus[`${currentSector.id}_${pt.num}_${sub}`] || false;
+                                            return (
+                                              <div 
+                                                key={idx}
+                                                onClick={() => toggleSpecSubtopic(currentSector.id, pt.num, sub)}
+                                                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                                                  isChecked 
+                                                    ? "bg-emerald-50/50 border-emerald-150 text-emerald-950 shadow-xxs" 
+                                                    : "bg-slate-50/50 border-slate-100 hover:border-slate-200 text-slate-700 hover:bg-slate-50"
+                                                }`}
+                                              >
+                                                <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                                                  isChecked 
+                                                    ? "bg-emerald-600 border-emerald-600 text-white" 
+                                                    : "bg-white border-slate-300"
+                                                }`}>
+                                                  {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className={`text-[11px] font-bold leading-snug ${isChecked ? 'line-through text-slate-400 font-medium' : 'text-slate-800'}`}>
+                                                    <span className="text-emerald-700 mr-1 font-extrabold font-mono">{pt.num}.{idx + 1}</span>{" "}
+                                                    {sub}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+
+                                      {/* BIBLIOGRAFIA */}
+                                      <div className="space-y-2.5">
+                                        <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                                          <FileText className="w-4 h-4 text-emerald-600" />
+                                          <h4 className="text-[10px] font-extrabold text-slate-900 uppercase tracking-wider">Bibliografia Sugerida</h4>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <p className="text-xxs leading-relaxed text-slate-500">
+                                            Para este ponto, o edital oficial e os principais autores recomendados para estudo de aprofundamento são:
+                                          </p>
+                                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-xxs leading-relaxed text-slate-700 italic font-medium">
+                                            {analysis.bibliography}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* ACTIONS */}
+                                      <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                        <div className="space-y-1 text-center sm:text-left">
+                                          <h5 className="text-[10px] font-extrabold text-slate-900 uppercase tracking-wider">
+                                            Ferramentas Inteligentes de Estudo
+                                          </h5>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onTopicClick(`FUNECE - ${currentSector.name}: Ponto ${pt.num} - ${pt.title}`);
+                                              onChangeModule("chat");
+                                            }}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xxs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer text-center"
+                                          >
+                                            <MessageSquare className="w-3.5 h-3.5" />
+                                            <span>Estudar com o Mentor</span>
+                                            <ArrowUpRight className="w-3 h-3" />
+                                          </button>
+                                          
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onTopicClick(`FUNECE - ${currentSector.name}: Ponto ${pt.num} - ${pt.title}`);
+                                              onChangeModule("simulator");
+                                            }}
+                                            className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-3 rounded-lg text-xxs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer text-center"
+                                          >
+                                            <Play className="w-3 h-3 text-emerald-400 animate-pulse" />
+                                            <span>Praticar Questões do Ponto</span>
+                                            <ArrowUpRight className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
+                          );
+                        });
+                      })()}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1085,7 +1157,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                             key={cat.id}
                             onClick={() => {
                               setSelectedGenCatId(cat.id);
-                              setSelectedGenTopicKey(cat.topics[0]);
+                              setSelectedGenTopicKey(null);
                             }}
                             className={`w-full text-left p-3 rounded-lg border transition-all flex flex-col gap-1 cursor-pointer ${
                               selectedGenCatId === cat.id
@@ -1097,7 +1169,7 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                               {cat.name}
                             </span>
                             <span className={`text-[9px] leading-snug line-clamp-2 ${
-                              selectedGenCatId === cat.id ? "text-emerald-700/80" : "text-slate-400 font-medium"
+                              selectedGenCatId === cat.id ? "text-emerald-750/85" : "text-slate-400 font-medium"
                             }`}>
                               {cat.desc}
                             </span>
@@ -1106,177 +1178,275 @@ export default function SyllabusModule({ profile, onChangeModule, onTopicClick }
                       </div>
                     </div>
 
-                    {/* General Content Checklist / Topic list */}
-                    <div className="bg-white rounded-xl border border-slate-100 p-3.5 space-y-3">
-                      <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-wider px-2">
-                        Tópicos Disponíveis ({generalCategories.find(c => c.id === selectedGenCatId)?.topics.length || 0})
-                      </h3>
-                      <div className="space-y-1 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
-                        {generalCategories.find(c => c.id === selectedGenCatId)?.topics.map((topKey) => {
-                          const guide = TOPIC_STUDY_GUIDES[topKey as keyof typeof TOPIC_STUDY_GUIDES];
-                          const isSel = selectedGenTopicKey === topKey;
-                          
-                          const subs = guide?.subtopics || [];
-                          const completedSubsCount = subs.filter(s => genSubtopicStatus[`${topKey}_${s}`]).length;
-                          const pct = subs.length > 0 ? Math.round((completedSubsCount / subs.length) * 100) : 0;
-
-                          return (
-                            <button
-                              key={topKey}
-                              onClick={() => setSelectedGenTopicKey(topKey)}
-                              className={`w-full text-left p-2.5 rounded-lg border transition-all flex flex-col gap-1.5 cursor-pointer ${
-                                isSel
-                                  ? "bg-emerald-50/50 border-emerald-250 text-emerald-950 font-bold"
-                                  : "bg-white border-slate-100 hover:border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2 w-full">
-                                <span className="text-xxs leading-snug line-clamp-2 font-bold font-sans">
-                                  {topKey}
-                                </span>
-                                {pct === 100 && (
-                                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                )}
-                              </div>
-                              
-                              <div className="w-full space-y-1">
-                                <div className="flex justify-between text-[8px] text-slate-400 font-bold">
-                                  <span>Progresso</span>
-                                  <span>{pct}%</span>
-                                </div>
-                                <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-emerald-500 rounded-full" 
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Content Column: Selected General Topic Study Guide */}
-                  <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-100 p-5 shadow-xs space-y-5">
+                    {/* Progress Card of Selected Category */}
                     {(() => {
-                      const guide = TOPIC_STUDY_GUIDES[selectedGenTopicKey as keyof typeof TOPIC_STUDY_GUIDES];
-                      if (!guide) {
-                        return (
-                          <div className="text-center py-12 text-slate-400 text-xs font-medium">
-                            Selecione um tópico ao lado para visualizar o Guia de Estudo.
-                          </div>
-                        );
-                      }
-
+                      const activeCatObj = generalCategories.find(c => c.id === selectedGenCatId);
+                      if (!activeCatObj) return null;
+                      
+                      let totalSubtopics = 0;
+                      let completedSubtopics = 0;
+                      activeCatObj.topics.forEach(topKey => {
+                        const guide = TOPIC_STUDY_GUIDES[topKey as keyof typeof TOPIC_STUDY_GUIDES];
+                        if (guide) {
+                          totalSubtopics += guide.subtopics.length;
+                          completedSubtopics += guide.subtopics.filter(s => genSubtopicStatus[`${topKey}_${s}`]).length;
+                        }
+                      });
+                      
+                      const pct = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
+                      
                       return (
-                        <div className="space-y-6">
-                          {/* Title Header */}
-                          <div className="border-b border-slate-100 pb-4 space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="bg-emerald-50 text-emerald-850 text-[9px] font-bold px-2.5 py-0.5 rounded-md border border-emerald-100">
-                                Conteúdo Geral Comum
+                        <div className="bg-white rounded-xl border border-slate-100 p-4 space-y-3">
+                          <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">
+                            Progresso em {activeCatObj.name}
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-end justify-between">
+                              <span className="text-2xl font-black text-slate-800 leading-none">
+                                {pct}%
                               </span>
-                              <span className="bg-slate-50 text-slate-700 text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-md border border-slate-250">
-                                Banca Preferencial: FUNECE
+                              <span className="text-[10px] text-slate-400 font-bold">
+                                {completedSubtopics} de {totalSubtopics} subtópicos
                               </span>
                             </div>
-                            <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-snug">
-                              {guide.topicName}
-                            </h2>
-                          </div>
-
-                          {/* Subtopics checklist */}
-                          <div className="space-y-3">
-                            <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                              <ClipboardList className="w-3.5 h-3.5 text-emerald-600" />
-                              Tópicos e Subtópicos do Edital (Marque como concluído)
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {guide.subtopics.map((sub, index) => {
-                                const isChecked = !!genSubtopicStatus[`${selectedGenTopicKey}_${sub}`];
-                                return (
-                                  <label
-                                    key={index}
-                                    className={`p-3 rounded-xl border transition-all flex items-start gap-2.5 cursor-pointer hover:bg-slate-50/50 ${
-                                      isChecked
-                                        ? "bg-emerald-50/30 border-emerald-100/70"
-                                        : "bg-white border-slate-100"
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() => toggleGenSubtopic(selectedGenTopicKey, sub)}
-                                      className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 shrink-0 accent-emerald-600 cursor-pointer"
-                                    />
-                                    <span className={`text-xxs leading-snug font-medium ${
-                                      isChecked ? "text-slate-500 line-through" : "text-slate-750"
-                                    }`}>
-                                      {sub}
-                                    </span>
-                                  </label>
-                                );
-                              })}
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-emerald-600 transition-all duration-500 rounded-full" 
+                                style={{ width: `${pct}%` }}
+                              />
                             </div>
-                          </div>
-
-
-
-                          {/* Info footer: references & study strategy */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-slate-50/30 rounded-xl border border-slate-100 p-4 space-y-2">
-                              <h4 className="text-slate-850 text-[9px] font-black uppercase tracking-wider">
-                                Referências Bibliográficas
-                              </h4>
-                              <p className="text-slate-650 text-xxs leading-relaxed italic">
-                                {guide.references}
-                              </p>
-                            </div>
-                            <div className="bg-emerald-50/20 rounded-xl border border-emerald-100/50 p-4 space-y-2">
-                              <h4 className="text-emerald-950 text-[9px] font-black uppercase tracking-wider">
-                                Estratégia de Memorização
-                              </h4>
-                              <p className="text-emerald-900 text-xxs leading-relaxed">
-                                {guide.strategy}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Action Shortcuts */}
-                          <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-                            {onChangeModule && onTopicClick && (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    onTopicClick(`FUNECE - Conteúdo Geral: ${selectedGenTopicKey}`);
-                                    onChangeModule("chat");
-                                  }}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-600/10 cursor-pointer"
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                  <span>Estudar com o Mentor</span>
-                                  <ArrowUpRight className="w-3.5 h-3.5" />
-                                </button>
-                                
-                                <button
-                                  onClick={() => {
-                                    onTopicClick(`FUNECE - Conteúdo Geral: ${selectedGenTopicKey}`);
-                                    onChangeModule("simulator");
-                                  }}
-                                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                                >
-                                  <Play className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                                  <span>Praticar Questões do Tópico</span>
-                                  <ArrowUpRight className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
                           </div>
                         </div>
                       );
                     })()}
+                  </div>
+
+                  {/* Right Column: Accordion of General Topics */}
+                  <div className="lg:col-span-8 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="space-y-0.5">
+                        <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                          Tópicos de {generalCategories.find(c => c.id === selectedGenCatId)?.name}
+                        </h2>
+                        <p className="text-slate-400 text-[10px]">
+                          Clique em um tópico para expandir o seu guia completo de estudo e memorização.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {(() => {
+                        const activeCat = generalCategories.find(c => c.id === selectedGenCatId);
+                        if (!activeCat || activeCat.topics.length === 0) {
+                          return (
+                            <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-400 font-bold text-xs">
+                              Nenhum tópico encontrado para esta categoria.
+                            </div>
+                          );
+                        }
+
+                        return activeCat.topics.map((topKey) => {
+                          const guide = TOPIC_STUDY_GUIDES[topKey as keyof typeof TOPIC_STUDY_GUIDES];
+                          if (!guide) return null;
+
+                          const isExpanded = selectedGenTopicKey === topKey;
+                          const completedCount = guide.subtopics.filter(sub => genSubtopicStatus[`${topKey}_${sub}`]).length;
+                          const pct = guide.subtopics.length > 0 ? Math.round((completedCount / guide.subtopics.length) * 100) : 0;
+
+                          return (
+                            <div
+                              key={topKey}
+                              className={`bg-white rounded-2xl border transition-all overflow-hidden ${
+                                isExpanded
+                                  ? "border-emerald-250 shadow-md ring-1 ring-emerald-600/5"
+                                  : "border-slate-100 hover:border-slate-200 hover:shadow-xs"
+                              }`}
+                            >
+                              {/* Header button */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedGenTopicKey(isExpanded ? null : topKey)}
+                                className={`w-full text-left p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
+                                  isExpanded ? "bg-emerald-50/20" : "hover:bg-slate-50/40"
+                                }`}
+                              >
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="bg-emerald-100 text-emerald-850 text-[9px] font-extrabold tracking-wide uppercase px-2 py-0.5 rounded-md">
+                                      Tópico Geral
+                                    </span>
+                                    {pct === 100 && (
+                                      <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" /> Concluído
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 leading-snug">
+                                    {guide.topicName}
+                                  </h3>
+
+                                  {/* Collapsed tiny progress bar */}
+                                  {!isExpanded && (
+                                    <div className="flex items-center gap-2 max-w-xs pt-1">
+                                      <div className="w-24 bg-slate-100 h-1 rounded-full overflow-hidden shrink-0">
+                                        <div 
+                                          className="h-full bg-emerald-600 transition-all duration-300" 
+                                          style={{ width: `${pct}%` }} 
+                                        />
+                                      </div>
+                                      <span className="text-[10px] text-slate-400 font-bold shrink-0">{pct}%</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="shrink-0 text-slate-400 pt-1 sm:pt-0">
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-5 h-5" />
+                                  ) : (
+                                    <ChevronDown className="w-5 h-5" />
+                                  )}
+                                </div>
+                              </button>
+
+                              {/* Expanded Accordion Content */}
+                              <AnimatePresence initial={false}>
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                                    className="border-t border-slate-100"
+                                  >
+                                    <div className="p-4 sm:p-5 space-y-5 bg-white">
+                                      {/* Progress details */}
+                                      <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-xxs font-bold text-slate-500">
+                                          <span>Progresso no Tópico</span>
+                                          <span className="text-emerald-700 font-extrabold">{pct}% Concluído ({completedCount} de {guide.subtopics.length} subtópicos)</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-emerald-600 transition-all duration-500" 
+                                            style={{ width: `${pct}%` }} 
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Subtopics Checklist */}
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                                          <CheckSquare className="w-4 h-4 text-emerald-600" />
+                                          <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
+                                            Subtópicos e Temas para Estudo Ativo
+                                          </h4>
+                                        </div>
+                                        <p className="text-slate-500 text-xxs leading-relaxed">
+                                          Marque cada subtópico abaixo conforme avançar no estudo para registrar seu progresso.
+                                        </p>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                          {guide.subtopics.map((sub, index) => {
+                                            const isChecked = !!genSubtopicStatus[`${topKey}_${sub}`];
+                                            return (
+                                              <div 
+                                                key={index}
+                                                onClick={() => toggleGenSubtopic(topKey, sub)}
+                                                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                                                  isChecked 
+                                                    ? "bg-emerald-50/50 border-emerald-150 text-emerald-950 shadow-xxs" 
+                                                    : "bg-slate-50/50 border-slate-100 hover:border-slate-200 text-slate-700 hover:bg-slate-50"
+                                                }`}
+                                              >
+                                                <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                                                  isChecked 
+                                                    ? "bg-emerald-600 border-emerald-600 text-white" 
+                                                    : "bg-white border-slate-300"
+                                                }`}>
+                                                  {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className={`text-[11px] font-bold leading-snug ${isChecked ? 'line-through text-slate-400 font-medium' : 'text-slate-800'}`}>
+                                                    {sub}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+
+                                      {/* Info Strategy / References */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-slate-50/50 rounded-xl border border-slate-100 p-4 space-y-2">
+                                          <div className="flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                            <FileText className="w-3.5 h-3.5 text-slate-500" />
+                                            <h4 className="text-slate-850 text-[10px] font-black uppercase tracking-wider">
+                                              Referências Bibliográficas
+                                            </h4>
+                                          </div>
+                                          <p className="text-slate-650 text-xxs leading-relaxed italic">
+                                            {guide.references}
+                                          </p>
+                                        </div>
+                                        <div className="bg-emerald-50/10 rounded-xl border border-emerald-100/40 p-4 space-y-2">
+                                          <div className="flex items-center gap-1.5 border-b border-emerald-100/30 pb-1.5">
+                                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                                            <h4 className="text-emerald-950 text-[10px] font-black uppercase tracking-wider">
+                                              Estratégia de Memorização
+                                            </h4>
+                                          </div>
+                                          <p className="text-emerald-900 text-xxs leading-relaxed">
+                                            {guide.strategy}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      {/* Actions */}
+                                      <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                        <div className="space-y-1 text-center sm:text-left">
+                                          <h5 className="text-[10px] font-extrabold text-slate-900 uppercase tracking-wider">
+                                            Ferramentas Inteligentes de Estudo
+                                          </h5>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onTopicClick(`FUNECE - Conteúdo Geral: ${topKey}`);
+                                              onChangeModule("chat");
+                                            }}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xxs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer text-center"
+                                          >
+                                            <MessageSquare className="w-3.5 h-3.5" />
+                                            <span>Estudar com o Mentor</span>
+                                            <ArrowUpRight className="w-3 h-3" />
+                                          </button>
+                                          
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onTopicClick(`FUNECE - Conteúdo Geral: ${topKey}`);
+                                              onChangeModule("simulator");
+                                            }}
+                                            className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-3 rounded-lg text-xxs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer text-center"
+                                          >
+                                            <Play className="w-3 h-3 text-emerald-400 animate-pulse" />
+                                            <span>Praticar Questões do Tópico</span>
+                                            <ArrowUpRight className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
                   </div>
                 </div>
               )}
