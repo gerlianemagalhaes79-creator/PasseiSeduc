@@ -1,14 +1,13 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-import { db } from "./src/db/index.ts";
-import { users, userStates } from "./src/db/schema.ts";
-import { requireAuth, AuthenticatedRequest } from "./src/middleware/auth.ts";
+import { db } from "./src/db/index";
+import { users, userStates } from "./src/db/schema";
+import { requireAuth, AuthenticatedRequest } from "./src/middleware/auth";
 import { eq, and } from "drizzle-orm";
 
 const app = express();
@@ -1098,6 +1097,7 @@ async function startServer() {
   }
 
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
