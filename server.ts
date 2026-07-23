@@ -186,8 +186,8 @@ async function generateContentWithRetry(
   maxRetries = 1
 ): Promise<any> {
   const modelsToTry = options.model 
-    ? [options.model, "gemini-3.5-flash", "gemini-3.1-flash-lite"] 
-    : ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
+    ? [options.model, "gemini-3.6-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"] 
+    : ["gemini-3.6-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
 
   const uniqueModels = Array.from(new Set(modelsToTry));
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -943,7 +943,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.6-flash",
       contents: sanitizedContents,
       config: {
         systemInstruction: `Você é o "Professor Mentor", um tutor virtual inteligente e didático, focado na aprovação de docentes no Concurso da Rede Estadual do Ceará 2026.
@@ -1101,7 +1101,7 @@ Esse documento deve conter instruções como:
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.5-flash",
+      model: "gemini-3.6-flash",
       contents: prompt,
       config: {
         systemInstruction: `Você é o maior especialista do Brasil em Engenharia Reversa de bancas de concurso público, com foco absoluto na banca ${banca}. Você produz relatórios técnicos impecáveis, práticos, repletos de exemplos e formatação em markdown de extrema elegância, perfeitos para treinar outras IAs ou instruir candidatos de alto nível que buscam passar no concurso Seduc-CE e prefeituras em 2026. Escreva em português de forma clara, objetiva e extremamente formal.`,

@@ -958,60 +958,16 @@ export default function App() {
               Ajustar Edital
             </button>
 
-            {/* Cloud SQL Syncing Control Widget */}
+            {/* Auto Save Local Storage Widget */}
             <div className="mt-6 border-t border-slate-100 pt-5">
-              <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`w-2 h-2 rounded-full ${user ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-extrabold">Backup em Nuvem</span>
+              <div className="bg-emerald-50/50 border border-emerald-100/60 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-[10px] font-mono text-emerald-800 uppercase tracking-widest font-extrabold">Salvo Automaticamente</span>
                 </div>
-
-                {user ? (
-                  <div>
-                    <p className="text-xs font-bold text-slate-800 truncate mb-1" title={user.email || ""}>
-                      {user.email}
-                    </p>
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                        {syncingStatus === "syncing" && "⏳ Salvando..."}
-                        {syncingStatus === "success" && "✅ Salvo"}
-                        {syncingStatus === "error" && "❌ Erro"}
-                        {syncingStatus === "idle" && "☁️ Conectado"}
-                      </span>
-                      <button
-                        onClick={async () => {
-                          await signOut(auth);
-                          localStorage.clear();
-                          window.location.reload();
-                        }}
-                        className="text-[10px] font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
-                      >
-                        Sair / Desconectar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mb-3 font-semibold">
-                      Salve seu progresso de estudos, edital e simulados na nuvem de forma segura.
-                    </p>
-                    <button
-                      onClick={async () => {
-                        try {
-                          setSyncingStatus("syncing");
-                          await signInWithPopup(auth, googleAuthProvider);
-                        } catch (err) {
-                          console.error("Google popup sign-in error:", err);
-                          setSyncingStatus("error");
-                        }
-                      }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold py-2.5 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Conectar com Google
-                    </button>
-                  </div>
-                )}
+                <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                  Seus simulados, cronograma e edital são armazenados localmente no dispositivo. Acesso livre e sem necessidade de login.
+                </p>
               </div>
             </div>
           </nav>

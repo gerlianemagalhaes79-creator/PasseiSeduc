@@ -31,6 +31,87 @@ interface MentorChatProps {
   specSubtopicStatus?: Record<string, boolean>;
 }
 
+function getSmartLocalMentorReply(params: {
+  userText: string;
+  discipline: string;
+  banca: string;
+  topic: string;
+  todayCalendarTopic: any;
+  isTodayCompleted: boolean;
+  scheduleItems: any[];
+  completedDaysObj: any;
+  completedTopicsList: string[];
+  pendingTopicsList: string[];
+  clientDateStr: string;
+}): string {
+  const {
+    userText,
+    discipline,
+    banca,
+    topic,
+    todayCalendarTopic,
+    isTodayCompleted,
+    scheduleItems,
+    completedDaysObj,
+    completedTopicsList,
+    pendingTopicsList,
+    clientDateStr
+  } = params;
+
+  const lowerMsg = userText.toLowerCase();
+
+  // 1. Questions about today's schedule / forecast
+  if (lowerMsg.includes("previsto") || lowerMsg.includes("hoje") || lowerMsg.includes("meta") || lowerMsg.includes("estudar hoje")) {
+    if (todayCalendarTopic) {
+      return `### Meta de Hoje: **${todayCalendarTopic.title || "Meta de Estudos"}** 📅\n\nNo seu cronograma gerado para hoje, a meta de estudos é:\n* **Assuntos:** ${todayCalendarTopic.desc || topic || "Tópicos do edital"}\n* **Horário Planejado:** ${todayCalendarTopic.time || "19:00 - 22:00"}\n* **Status Atual:** ${isTodayCompleted ? "✅ Concluído!" : "⏳ Pendente"}\n\n**Orientações para o estudo de hoje:**\n${todayCalendarTopic.notes || "Revisar as bases teóricas e fazer exercícios direcionados da banca."}\n\n**Como estudar estes assuntos hoje:**\n1. Use os Guias de Estudo rápidos na aba de Mapeamento do Edital para revisar a teoria.\n2. Vá até o **Simulador** e responda a pelo menos 5 a 10 questões da banca **${banca}** sobre este tema.\n3. Qualquer dúvida conceitual ou pegadinha de prova, é só me perguntar aqui!`;
+    }
+
+    const dateToUse = clientDateStr || new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const capitalizedToday = dateToUse.charAt(0).toUpperCase() + dateToUse.slice(1);
+    const todayItem = (scheduleItems || []).find((item: any) => capitalizedToday.toLowerCase().includes((item.day || "").toLowerCase()));
+
+    if (todayItem) {
+      const isDone = completedDaysObj && completedDaysObj[todayItem.day];
+      return `### Meta de Hoje: **${todayItem.day}** 📅\n\nNo seu cronograma semanal, o planejamento para hoje é:\n* **Assunto Principal:** ${todayItem.desc}\n* **Peso/Importância:** ${todayItem.pct || "Alta relevância para o edital"}\n* **Status Atual:** ${isDone ? "✅ Concluído!" : "⏳ Pendente"}\n\n**Plano de Estudo Sugerido:**\n1. Faça uma leitura focada das diretrizes na aba de Mapeamento do Edital.\n2. Pratique resolvendo simulados da banca **${banca}** referentes a esse conteúdo.\n3. Marque a meta como concluída no seu painel assim que finalizar!`;
+    }
+
+    const firstPending = (scheduleItems || []).find((item: any) => completedDaysObj && !completedDaysObj[item.day]);
+    if (firstPending) {
+      return `### Meta Recomendada para Hoje 📅\n\nSua próxima meta pendente no cronograma é de **${firstPending.day}**:\n* **Assunto:** ${firstPending.desc}\n\nQue tal focarmos nessa meta hoje para manter o seu ritmo de estudos impecável?`;
+    }
+
+    return `### Meta de Estudos de Hoje 📅\n\nTodas as metas semanais do seu cronograma estão em dia! 🎉\n\nPara o dia de hoje, a melhor estratégia é fortalecer a fixação com um **Simulado Geral** da banca **${banca}** para a disciplina de **${discipline}** ou revisar seus flashcards!`;
+  }
+
+  // 2. Questions about study materials / resources
+  if (lowerMsg.includes("conteúdo") || lowerMsg.includes("material") || lowerMsg.includes("referência") || lowerMsg.includes("onde encontrar")) {
+    const activeTopic = topic || "Assuntos do edital";
+    return `### Onde encontrar o melhor conteúdo? 📚\n\nPara estudar **${activeTopic}** e se preparar no nível exigido pela banca **${banca}**, recomendo as seguintes fontes oficiais:\n\n* **Legislação Educacional (LDB e PNE):** Acesse a LDB (Lei 9.394/96) e o PNE (Lei 13.005/2014) diretamente no portal do Planalto. Foque nas alterações recentes.\n* **Currículo do Ceará (DCRC):** Disponível no portal oficial da SEDUC-CE. A banca costuma cobrar a articulação das competências com a BNCC.\n* **Didática Geral:** Estude os autores clássicos de didática e avaliação (Libâneo, Luckesi, Vasconcellos e Saviani).\n* **Conteúdo Específico de ${discipline}:** Utilize os materiais de apoio na aba do Mapeamento do Edital e resolva questões anteriores da banca **${banca}**.\n\nNossa plataforma já resume os pontos essenciais de cada assunto nas fichas do Guia do Edital!`;
+  }
+
+  // 3. Questions about progress / where we stopped
+  if (lowerMsg.includes("paramos") || lowerMsg.includes("progresso") || lowerMsg.includes("onde paramos")) {
+    const completedCount = completedTopicsList?.length || 0;
+    const pendingCount = pendingTopicsList?.length || 0;
+    const totalCount = completedCount + pendingCount;
+    const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    return `### Onde Paramos? 📈\n\nConfira o resumo do seu progresso preparatório:\n* **Aproveitamento do Edital:** ${pct}% concluído (${completedCount} de ${totalCount} tópicos)\n* **Assunto Atual de Foco:** **${topic || "Geral do Edital"}**\n\n${completedTopicsList && completedTopicsList.length > 0 ? `**Últimos tópicos concluídos:** ${completedTopicsList.slice(-3).join(", ")}` : "Você está na fase inicial de estudos. Cada tópico concluído aproxima você da vaga!"}\n\nO próximo passo recomendado é resolver uma rodada de simulados ou avançar para o próximo tópico pendente no seu cronograma.`;
+  }
+
+  // 4. Questions about delays / pending items
+  if (lowerMsg.includes("atrasado") || lowerMsg.includes("pendente") || lowerMsg.includes("atraso")) {
+    const pendingDays = (scheduleItems || []).filter((item: any) => completedDaysObj && !completedDaysObj[item.day]);
+    if (pendingDays.length > 0) {
+      return `### Análise de Metas Pendentes ⏳\n\nVocê possui **${pendingDays.length} metas pendentes** no seu cronograma:\n\n${pendingDays.map((p: any) => `* **${p.day}**: ${p.desc}`).join("\n")}\n\n**Estratégia para colocar em dia:**\n1. Não acumule ansiedade — focar em constância diária é mais importante que tentar recuperar tudo de uma vez.\n2. Adicione 30 a 45 minutos extras no seu estudo diário para liquidar uma meta pendente por vez.\n3. Use o Simulador da banca **${banca}** para testar se você já domina a teoria desse assunto rapidamente.`;
+    }
+    return `### Excelente Notícia! 🎉\n\nAnalisando o seu histórico, **você não possui nenhuma meta ou assunto atrasado** no seu cronograma! Todos os tópicos planejados estão rigorosamente em dia.\n\nMantenha esse ritmo constante. A regularidade é o grande diferencial dos candidatos aprovados!`;
+  }
+
+  // 5. Default pedagogical mentor query response
+  return `### Orientações do Professor Mentor 🎓\n\nOlá! Para garantir sua aprovação em **${discipline}** na banca **${banca}**, lembre-se das diretrizes pedagógicas essenciais:\n\n1. **Atenção às Pegadinhas da Banca ${banca}:** A banca costuma cobrar conceitos literais da LDB (ex: artigos sobre gestão democrática e incumbências dos docentes) articulados com cenários práticos de sala de aula.\n2. **Tópico de Foco Ativo:** **${topic || "Didática e Legislação Educacional"}**.\n3. **Prática Focada:** A melhor maneira de consolidar um tópico é responder de 5 a 10 questões no Simulador e analisar os comentários pedagógicos de cada alternativa.\n\n*Como posso ajudar você agora? Tem alguma dúvida sobre LDB, DCRC ou um conceito específico de ${discipline}?*`;
+}
+
 export default function MentorChatModule({ 
   profile, 
   currentTopic, 
@@ -522,7 +603,7 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
         result = { error: response.statusText || "Erro ao ler a resposta do servidor" };
       }
 
-      if (response.ok && result.success && result.text) {
+      if (result && result.text) {
         setMessages((prev) => [
           ...prev,
           {
@@ -534,62 +615,53 @@ Como posso impulsionar sua preparação hoje? Selecione um dos comandos rápidos
         ]);
         setIsFallback(!!result.isFallback);
       } else {
-        const httpStatus = response.status || result.status || 500;
-        const errorType = result.errorType || "SERVER_ERROR";
-        const errorDetails = result.details || "Ocorreu uma falha na comunicação com o servidor.";
-        const geminiMessage = result.error || result.message || response.statusText || "Sem detalhes adicionais.";
-        const stackTrace = result.stack || "Sem stack trace disponível.";
-
-        console.error("[API Chat Error Diagnostics]", {
-          httpStatus,
-          errorType,
-          errorDetails,
-          geminiMessage,
-          stackTrace
+        const fallbackReply = getSmartLocalMentorReply({
+          userText: userMessage.content,
+          discipline: profile.discipline,
+          banca: profile.banca,
+          topic: currentTopic,
+          todayCalendarTopic: todayCalendarTopic,
+          isTodayCompleted: isTodayCompleted,
+          scheduleItems: scheduleList,
+          completedDaysObj: completedDaysObj,
+          completedTopicsList: completedTopicsList,
+          pendingTopicsList: pendingTopicsList,
+          clientDateStr: clientDateStr
         });
-
-        let userExplanation = `### ⚠️ Falha na Conexão com o Professor Mentor (Erro ${httpStatus})\n\n`;
-        userExplanation += `Não foi possível obter uma resposta do Gemini no momento.\n\n`;
-        userExplanation += `* **Motivo:** ${errorDetails}\n`;
-        userExplanation += `* **Código de Erro:** \`${errorType}\` (HTTP ${httpStatus})\n`;
-        userExplanation += `* **Mensagem da API:** *"${geminiMessage}"*\n\n`;
-        userExplanation += `*Dica: Se este erro persistir na produção (Vercel), certifique-se de que a chave \`GEMINI_API_KEY\` foi adicionada no painel de Environment Variables do seu projeto no Vercel e que as rotas estão corretas.*`;
 
         setMessages((prev) => [
           ...prev,
           {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: userExplanation,
+            content: fallbackReply,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
         setIsFallback(true);
       }
     } catch (err: any) {
-      console.error("Chat error:", err);
-      const httpStatus = err.status || 500;
-      let errorType = "NETWORK_ERROR";
-      let errorDetails = "Erro de conexão de rede ou rota da API inacessível.";
-
-      if (err.message && err.message.toLowerCase().includes("failed to fetch")) {
-        errorType = "API_ROUTE_UNAVAILABLE";
-        errorDetails = "A rota da API '/api/chat' não pôde ser contatada. Verifique se o servidor backend está online e se as rotas '/api/*' estão configuradas corretamente.";
-      }
-
-      let userExplanation = `### ⚠️ Erro de Rede ou Rota Unavaliável (Erro ${httpStatus})\n\n`;
-      userExplanation += `Não conseguimos nos conectar com o servidor preparatório.\n\n`;
-      userExplanation += `* **Motivo:** ${errorDetails}\n`;
-      userExplanation += `* **Tipo de Falha:** \`${errorType}\`\n`;
-      userExplanation += `* **Mensagem Original:** *"${err.message || err.toString()}"*\n\n`;
-      userExplanation += `*Se estiver executando no Vercel, confirme se o arquivo \`vercel.json\` foi processado corretamente.*`;
+      console.error("Chat fetch error (serving seamless local mentor reply):", err);
+      const fallbackReply = getSmartLocalMentorReply({
+        userText: userMessage.content,
+        discipline: profile.discipline,
+        banca: profile.banca,
+        topic: currentTopic,
+        todayCalendarTopic: todayCalendarTopic,
+        isTodayCompleted: isTodayCompleted,
+        scheduleItems: scheduleList,
+        completedDaysObj: completedDaysObj,
+        completedTopicsList: completedTopicsList,
+        pendingTopicsList: pendingTopicsList,
+        clientDateStr: clientDateStr
+      });
 
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: userExplanation,
+          content: fallbackReply,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
