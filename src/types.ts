@@ -81,3 +81,21 @@ export interface Flashcard {
   createdAt: string;
 }
 
+export interface RegisteredTeacher {
+  id: string;
+  fullName: string;
+  password: string;
+  discipline: string;
+  status: "active" | "inactive";
+  createdAt: string;
+  lastAccess?: string;
+  notes?: string;
+}
+
+export interface SystemUserSession {
+  role: "admin" | "teacher";
+  fullName: string;
+  id?: string;
+  discipline?: string;
+}
+

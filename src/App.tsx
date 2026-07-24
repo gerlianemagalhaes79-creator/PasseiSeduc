@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { UserProfile, StudyTopic, Flashcard } from "./types";
+import { UserProfile, StudyTopic, Flashcard, RegisteredTeacher, SystemUserSession } from "./types";
 import { INITIAL_TOPICS, DISCIPLINE_TOPICS } from "./data/initialTopics";
 import { getSectorForDiscipline } from "./data/sectorsData";
 import DashboardModule from "./components/DashboardModule";
@@ -10,6 +10,8 @@ import OnboardingModule from "./components/OnboardingModule";
 import DnaModule from "./components/DnaModule";
 import FlashcardsModal from "./components/FlashcardsModal";
 import FlashcardsModule from "./components/FlashcardsModule";
+import AdminModule from "./components/AdminModule";
+import UserAuthModal from "./components/UserAuthModal";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -30,7 +32,10 @@ import {
   Calendar,
   Layers,
   Image,
-  Trash2
+  Trash2,
+  ShieldCheck,
+  UserCheck,
+  UserPlus
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
@@ -41,6 +46,81 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [syncLoading, setSyncLoading] = useState<boolean>(true);
   const [syncingStatus, setSyncingStatus] = useState<"idle" | "syncing" | "success" | "error">("idle");
+
+  // Admin & Teacher Registered Accounts State
+  const [registeredTeachers, setRegisteredTeachers] = useState<RegisteredTeacher[]>(() => {
+    const saved = localStorage.getItem("ia_aprova_registered_teachers_v1");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        id: "teacher-demo-1",
+        fullName: "Prof. Ana Maria Vasconcelos",
+        password: "Prof2026!",
+        discipline: "Língua Portuguesa",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        notes: "Professora cadastrada pelo Administrador"
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_registered_teachers_v1", JSON.stringify(registeredTeachers));
+  }, [registeredTeachers]);
+
+  // Active Session User (Admin or Teacher)
+  const [currentSystemUser, setCurrentSystemUser] = useState<SystemUserSession>(() => {
+    const saved = localStorage.getItem("ia_aprova_current_user_v1");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return { role: "admin", fullName: "Administrador do Sistema" };
+  });
+
+  useEffect(() => {
+    localStorage.setItem("ia_aprova_current_user_v1", JSON.stringify(currentSystemUser));
+  }, [currentSystemUser]);
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Teacher Management Handlers
+  const handleAddTeacher = (teacherData: Omit<RegisteredTeacher, "id" | "createdAt">) => {
+    const newTeacher: RegisteredTeacher = {
+      ...teacherData,
+      id: `teacher-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
+    setRegisteredTeachers(prev => [newTeacher, ...prev]);
+  };
+
+  const handleUpdateTeacher = (id: string, updated: Partial<RegisteredTeacher>) => {
+    setRegisteredTeachers(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t));
+  };
+
+  const handleDeleteTeacher = (id: string) => {
+    setRegisteredTeachers(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleLoginSuccess = (session: SystemUserSession) => {
+    setCurrentSystemUser(session);
+    if (session.role === "teacher" && session.discipline) {
+      setDiscipline(session.discipline);
+      setProfile(prev => ({
+        ...prev,
+        name: session.fullName,
+        discipline: session.discipline || prev.discipline
+      }));
+    }
+    if (session.role === "admin") {
+      setActiveModule("admin");
+    }
+  };
 
   // Application Onboarding State
   const [onboarded, setOnboarded] = useState<boolean>(() => {
@@ -795,6 +875,25 @@ export default function App() {
 
             {/* Config & Stat Header badges + Dropdown Selector */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              {/* User Account Login Pill */}
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-2xs ${
+                  currentSystemUser.role === "admin"
+                    ? "bg-slate-900 text-white border-slate-800 hover:bg-slate-800"
+                    : "bg-emerald-50 text-emerald-900 border-emerald-200/80 hover:bg-emerald-100"
+                }`}
+                title="Clique para trocar de usuário ou acessar o painel"
+              >
+                {currentSystemUser.role === "admin" ? (
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <GraduationCap className="w-4 h-4 text-emerald-600 shrink-0" />
+                )}
+                <span className="max-w-[120px] sm:max-w-[180px] truncate">{currentSystemUser.fullName}</span>
+                <span className="text-[10px] opacity-75 font-mono">({currentSystemUser.role === "admin" ? "Admin" : "Prof."})</span>
+              </button>
+
               {/* Stat badges (visible on desktop) */}
               <div className="hidden lg:flex items-center gap-3">
                 <div className="bg-slate-50 border border-slate-100/50 rounded-xl px-3.5 py-1.5 flex items-center gap-2">
@@ -812,17 +911,6 @@ export default function App() {
                   <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
                   <span>{profile.streak} dias</span>
                 </div>
-                {user ? (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 rounded-xl px-3.5 py-1.5 shadow-xxs">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                    <span>Nuvem Ativa</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
-                    <span>Nuvem Inativa</span>
-                  </div>
-                )}
               </div>
 
               {/* Redesigned Sleek Primary Dropdown View Switcher */}
@@ -840,6 +928,7 @@ export default function App() {
                   <option value="flashcards" className="text-slate-800 bg-white font-semibold">⚡ Flashcards</option>
                   <option value="chat" className="text-slate-800 bg-white font-semibold">💬 Mentor</option>
                   <option value="dna" className="text-slate-800 bg-white font-semibold">🧬 DNA Banca</option>
+                  <option value="admin" className="text-slate-800 bg-white font-semibold">👑 Painel Admin</option>
                   <option value="config" className="text-slate-800 bg-white font-semibold">⚙️ Ajustes</option>
                 </select>
                 <div className="absolute inset-y-0 right-2 sm:right-3 flex items-center pointer-events-none text-white">
@@ -944,6 +1033,18 @@ export default function App() {
             >
               <Fingerprint className="w-4.5 h-4.5 text-emerald-600" />
               DNA da Banca
+            </button>
+
+            <button
+              onClick={() => setActiveModule("admin")}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeModule === "admin"
+                  ? "bg-emerald-50/60 text-emerald-800 border border-emerald-100/30 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50 border border-transparent"
+              }`}
+            >
+              <ShieldCheck className="w-4.5 h-4.5 text-emerald-600" />
+              Painel Admin / Professores
             </button>
 
             <button
@@ -1094,6 +1195,23 @@ export default function App() {
                     exit={{ opacity: 0 }}
                   >
                     <DnaModule discipline={discipline} banca={banca} />
+                  </motion.div>
+                )}
+
+                {activeModule === "admin" && (
+                  <motion.div
+                    key="admin"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <AdminModule
+                      teachers={registeredTeachers}
+                      onAddTeacher={handleAddTeacher}
+                      onUpdateTeacher={handleUpdateTeacher}
+                      onDeleteTeacher={handleDeleteTeacher}
+                      currentLoginUser={currentSystemUser}
+                    />
                   </motion.div>
                 )}
 
@@ -1333,6 +1451,13 @@ export default function App() {
           setCurrentTopic(topicName);
           setActiveModule("simulator");
         }}
+      />
+
+      <UserAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        teachers={registeredTeachers}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* Aesthetic Footer */}
